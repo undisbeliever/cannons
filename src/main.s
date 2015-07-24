@@ -3,8 +3,11 @@
 .include "includes/import_export.inc"
 .include "includes/registers.inc"
 .include "includes/structure.inc"
+.include "includes/config.inc"
 .include "routines/random.h"
 .include "routines/screen.h"
+
+.include "terrain.h"
 
 
 ;; Initialisation Routine
@@ -25,10 +28,14 @@ ROUTINE Main
 	LDA	#MEMSEL_FASTROM
 	STA	MEMSEL
 
-	LDA	#$0F
-	STA	INIDISP
-
 	REPEAT
+		JSR	Terrain__Generate
+
+		; Prevent screen tearing
+		JSR	Screen__WaitFrame
+
+		LDA	#$0F
+		STA	INIDISP
 	FOREVER
 
 

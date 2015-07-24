@@ -1,0 +1,23 @@
+
+.ifndef ::__VRAM_H_
+::__VRAM_H_ = 1
+
+.include "includes/registers.inc"
+
+;; VRAM Map
+;; WORD ADDRESSES
+CANNONS_SCREEN_MODE	= BGMODE_MODE0
+
+CANNONS_BG1_MAP		= $0000
+CANNONS_BG1_TILES	= $2000
+CANNONS_OAM_TILES	= $6000
+
+CANNONS_BG1_SIZE	= BGXSC_SIZE_32X32
+
+CANNONS_OAM_SIZE	= OBSEL_SIZE_8_16
+CANNONS_OAM_NAME	= 0
+
+.endif ; __VRAM_H_
+
+; vim: ft=asm:
+
