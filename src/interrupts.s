@@ -7,6 +7,8 @@
 .include "routines/random.h"
 .include "routines/controller.h"
 
+.include "terrain.h"
+
 ;; Blank Handlers
 ROUTINE IrqHandler
 	RTI
@@ -31,6 +33,8 @@ ROUTINE VBlank
 .I16
 	; Reset NMI Flag.
 	LDA	RDNMI
+
+	JSR	Terrain__VBlank
 
 	Screen_VBlank
 

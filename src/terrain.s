@@ -19,16 +19,26 @@ GREEN = 1
 RED   = 2
 BLUE  = 3
 
+;; The height of pixels each BG layer displays.
+BG_DISPLAY_HEIGHT = 16 * 8
+
 .define WIDTH PIXELBUFFER_WIDTH * 8
 .define HEIGHT PIXELBUFFER_HEIGHT * 8
 
+SCREEN_WIDTH = 256
+SCREEN_HEIGHT = 224
+
 ;; Displacement value for Midpoint Displacement Algorithm
-;; 0:7:8 fixed point
-CONFIG	TERRAIN_DISPLACE, 50 * 256
+;; 0:10:6 fixed point integer
+CONFIG	TERRAIN_DISPLACEMENT, 70 * 64
+
+;; Minimum displacement
+;; 0:10:6 fixed point integer
+CONFIG	TERRAIN_MIN_DISPLACEMENT, 30
 
 ;; Roughness value for Midpoint Displacement Algorithm
-;; 0:7:8 fixed point
-CONFIG	TERRAIN_ROUGHNESS, 140
+;; 0:0:16 fixed point integer
+CONFIG	TERRAIN_ROUGHNESS, $8CCC	; ~0.55
 
 ;; Minimum height value for first/last line of terrain.
 CONFIG	TERRAIN_END_MIN, 20
@@ -36,16 +46,30 @@ CONFIG	TERRAIN_END_MIN, 20
 ;; Maximum height value for first/last line of terrain.
 CONFIG	TERRAIN_END_MAX, HEIGHT - TERRAIN_END_MIN
 
+.struct HdmaTmTableStruct
+	nScanlines	.byte
+	tm		.byte
+.endstruct
+
 .assert PixelBuffer__bufferBank = $7E, error, "Bad Value"
 .segment "SHADOW"
 	;; Terrain height for each X position of pixelbuffer
-	;; 0:8:8 format
+	;; 0:10:6 fixed point integer
 	WORD	terrainXposTable,	WIDTH + 1
 	WORD	tmp1
 	WORD	tmp2
 	WORD	tmp3
 	WORD	tmp4
 
+	SINT16	hOffset
+	UINT16	vOffset
+
+	WORD	bg1vOffset
+	WORD	bg2vOffset
+	WORD	bg3vOffset
+
+	STRUCT	hdmaTmTable, HdmaTmTableStruct, 3
+	BYTE	endHdmaTmTable
 .code
 
 .A8
@@ -66,7 +90,188 @@ ROUTINE Generate
 .A8
 
 	JSR	SetupScreen
-	TransferToVramLocation PixelBuffer__buffer, CANNONS_BG1_TILES + 8
+	TransferToVramLocation PixelBuffer__buffer, CANNONS_BG1_TILES
+
+	RTS
+
+
+
+; DB access registers
+.A8
+.I16
+ROUTINE VBlank
+	REP	#$20
+	SEP	#$10
+.A16
+.I8
+	LDA	hOffset
+	IF_MINUS
+		STZ	hOffset
+	ELSE
+		CMP	#WIDTH - SCREEN_WIDTH
+		IF_GE
+			LDA	#WIDTH - SCREEN_WIDTH - 1
+			STA	hOffset
+		ENDIF
+	ENDIF
+
+	LDA	vOffset
+	CMP	#HEIGHT - SCREEN_HEIGHT
+	IF_SGE
+		LDA	#HEIGHT - SCREEN_HEIGHT - 1
+		STA	vOffset
+	ENDIF
+
+	LDX	hOffset
+	LDY	hOffset + 1
+
+	STX	BG1HOFS
+	STY	BG1HOFS
+	STX	BG2HOFS
+	STY	BG2HOFS
+	STX	BG3HOFS
+	STY	BG3HOFS
+
+	LDA	#.loword(-1)
+	ADD	vOffset
+	STA	bg1vOffset
+
+	LDA	#.loword(-1 - BG_DISPLAY_HEIGHT)
+	ADD	vOffset
+	STA	bg2vOffset
+
+	LDA	#.loword(-1 - BG_DISPLAY_HEIGHT * 2)
+	ADD	vOffset
+	STA	bg3vOffset
+
+	LDX	bg1vOffset
+	STX	BG1VOFS
+	LDY	bg1vOffset + 1
+	STY	BG1VOFS
+
+	LDX	bg2vOffset
+	STX	BG2VOFS
+	LDY	bg2vOffset + 1
+	STY	BG2VOFS
+
+	LDX	bg3vOffset
+	STX	BG3VOFS
+	LDY	bg3vOffset + 1
+	STY	BG3VOFS
+
+	LDX	#0
+	STX	HDMAEN
+
+	LDA	vOffset
+	IF_MINUS
+		CMP	#.loword(-128)
+		IF_SLT
+			; ::BUGFIX HDMA nScanlines must be < 128::
+			NEG16
+			AND	#$7F
+			TAX
+			STX	hdmaTmTable + .sizeof(HdmaTmTableStruct) * 0 + HdmaTmTableStruct::nScanlines
+			LDX	#TM_OBJ
+			STX	hdmaTmTable + .sizeof(HdmaTmTableStruct) * 0 + HdmaTmTableStruct::tm
+
+			LDX	#127
+			STX	hdmaTmTable + .sizeof(HdmaTmTableStruct) * 1 + HdmaTmTableStruct::nScanlines
+			LDX	#TM_OBJ
+			STX	hdmaTmTable + .sizeof(HdmaTmTableStruct) * 1 + HdmaTmTableStruct::tm
+
+			LDX	#BG_DISPLAY_HEIGHT
+			STX	hdmaTmTable + .sizeof(HdmaTmTableStruct) * 2 + HdmaTmTableStruct::nScanlines
+			
+			LDX	#TM_BG1 | TM_OBJ
+			STX	hdmaTmTable + .sizeof(HdmaTmTableStruct) * 2 + HdmaTmTableStruct::tm
+
+			LDX	#0
+			STX	hdmaTmTable + .sizeof(HdmaTmTableStruct) * 3 + HdmaTmTableStruct::nScanlines
+		ELSE	
+			NEG16
+			TAX
+			STX	hdmaTmTable + .sizeof(HdmaTmTableStruct) * 0 + HdmaTmTableStruct::nScanlines
+
+			LDX	#TM_OBJ
+			STX	hdmaTmTable + .sizeof(HdmaTmTableStruct) * 0 + HdmaTmTableStruct::tm
+
+			LDX	#BG_DISPLAY_HEIGHT
+			STX	hdmaTmTable + .sizeof(HdmaTmTableStruct) * 1 + HdmaTmTableStruct::nScanlines
+			
+			LDX	#TM_BG1 | TM_OBJ
+			STX	hdmaTmTable + .sizeof(HdmaTmTableStruct) * 1 + HdmaTmTableStruct::tm
+
+			LDX	#BG_DISPLAY_HEIGHT
+			STX	hdmaTmTable + .sizeof(HdmaTmTableStruct) * 2 + HdmaTmTableStruct::nScanlines
+			
+			LDX	#TM_BG2 | TM_OBJ
+			STX	hdmaTmTable + .sizeof(HdmaTmTableStruct) * 2 + HdmaTmTableStruct::tm
+
+			LDX	#0
+			STX	endHdmaTmTable
+		ENDIF
+	ELSE
+		LDA	vOffset
+		CMP	#.loword(BG_DISPLAY_HEIGHT)
+		IF_LT
+			RSB16	#BG_DISPLAY_HEIGHT
+
+			TAX
+			STX	hdmaTmTable + .sizeof(HdmaTmTableStruct) * 0 + HdmaTmTableStruct::nScanlines
+
+			LDX	#TM_BG1 | TM_OBJ
+			STX	hdmaTmTable + .sizeof(HdmaTmTableStruct) * 0 + HdmaTmTableStruct::tm
+
+			LDX	#BG_DISPLAY_HEIGHT
+			STX	hdmaTmTable + .sizeof(HdmaTmTableStruct) * 1 + HdmaTmTableStruct::nScanlines
+			
+			LDX	#TM_BG2 | TM_OBJ
+			STX	hdmaTmTable + .sizeof(HdmaTmTableStruct) * 1 + HdmaTmTableStruct::tm
+
+			LDX	#BG_DISPLAY_HEIGHT
+			STX	hdmaTmTable + .sizeof(HdmaTmTableStruct) * 2 + HdmaTmTableStruct::nScanlines
+			
+			LDX	#TM_BG3 | TM_OBJ
+			STX	hdmaTmTable + .sizeof(HdmaTmTableStruct) * 2 + HdmaTmTableStruct::tm
+
+			LDX	#0
+			STX	endHdmaTmTable
+		ELSE
+			RSB16	#BG_DISPLAY_HEIGHT * 2
+
+			TAX
+			STX	hdmaTmTable + .sizeof(HdmaTmTableStruct) * 0 + HdmaTmTableStruct::nScanlines
+
+			LDX	#TM_BG2 | TM_OBJ
+			STX	hdmaTmTable + .sizeof(HdmaTmTableStruct) * 0 + HdmaTmTableStruct::tm
+
+			LDX	#BG_DISPLAY_HEIGHT
+			STX	hdmaTmTable + .sizeof(HdmaTmTableStruct) * 1 + HdmaTmTableStruct::nScanlines
+			
+			LDX	#TM_BG3 | TM_OBJ
+			STX	hdmaTmTable + .sizeof(HdmaTmTableStruct) * 1 + HdmaTmTableStruct::tm
+
+			LDX	#0
+			STX	hdmaTmTable + .sizeof(HdmaTmTableStruct) * 2 + HdmaTmTableStruct::nScanlines
+		ENDIF
+	ENDIF
+
+	; Setup HDMA Registers
+	LDA	#DMAP_DIRECTION_TO_PPU | DMAP_ADDRESSING_ABSOLUTE | DMAP_TRANSFER_1REG | (.lobyte(TM) << 8)
+	STA	DMAP7			; also sets BBAD7
+
+	LDA	#.loword(hdmaTmTable)
+	STA	A1T7
+	LDX	#.bankbyte(hdmaTmTable)
+	STX	A1B7
+
+	LDX	#HDMAEN_DMA7
+	STX	HDMAEN
+
+	REP	#$10
+	SEP	#$20
+.A8
+.I16
 
 	RTS
 
@@ -81,11 +286,11 @@ ROUTINE RenderBuffer
 	LDA	#$00FF
 	STA	PixelBuffer__colorBits
 
-	LDX	#.sizeof(terrainXposTable) - 1
-	STX	tmp2
-
 	LDX	#WIDTH - 1
 	STX	tmp1
+
+	LDX	#.sizeof(terrainXposTable)
+	STX	tmp2
 
 	REPEAT
 		LDX	tmp2
@@ -93,8 +298,14 @@ ROUTINE RenderBuffer
 		DEX
 		STX	tmp2
 
+		; 0:16:6 fixed point integer
 		LDA	terrainXposTable, X
-		AND	#$00FF
+		LSR
+		LSR
+		LSR
+		LSR
+		LSR
+		LSR
 		TAY
 
 		RSB16	#HEIGHT
@@ -111,6 +322,7 @@ ROUTINE RenderBuffer
 
 
 ;; Uses the Midpoint Displacement Algorithm to generate the terrainXposTable list.
+;; This algorith is preformed in 0:7:9 fixed point math.
 .A8
 .I16
 ROUTINE GenerateTerrainTable
@@ -148,20 +360,20 @@ tmp_center	= tmp2
 tmp_point	= tmp3
 tmp_displacement= tmp4
 
-	LDX	#TERRAIN_END_MIN * 256
-	LDY	#TERRAIN_END_MAX * 256
+	LDX	#TERRAIN_END_MIN * 64
+	LDY	#TERRAIN_END_MAX * 64
 	JSR	Random__Rnd_U16X_U16Y
 	STY	terrainXposTable
 
-	LDX	#TERRAIN_END_MIN * 256
-	LDY	#TERRAIN_END_MAX * 256
+	LDX	#TERRAIN_END_MIN * 64
+	LDY	#TERRAIN_END_MAX * 64
 	JSR	Random__Rnd_U16X_U16Y
 	STY	terrainXposTable + .sizeof(terrainXposTable) - 2
 
 	REP	#$20
 .A16
 
-	LDA	#TERRAIN_DISPLACE
+	LDA	#TERRAIN_DISPLACEMENT
 	STA	tmp_displacement
 
 	LDA	#WIDTH / 2 * 2
@@ -193,19 +405,20 @@ tmp_displacement= tmp4
 			JSR	Random__Rnd_U16Y
 			REP	#$20
 .A16
+
 			TYA
 			ADD	tmp_point
 			SUB	tmp_displacement
 
-			; Remember: A is 0:8:8 fixed point integer
+			; Remember: A is 0:10:6 fixed point integer
 
-			CMP	#(HEIGHT - 1) * 256
+			CMP	#(HEIGHT - 1) * 64
 			IF_GE
-				CMP	#(256 - (256 - HEIGHT) / 2) * 256
+				CMP	#(64 - (64 - HEIGHT) / 2) * 64
 				IF_GE
-					LDA	#1 * 256
+					LDA	#1 * 64
 				ELSE
-					LDA	#(HEIGHT - 2) * 256
+					LDA	#(HEIGHT - 2) * 64
 				ENDIF
 			ENDIF
 
@@ -220,13 +433,21 @@ tmp_displacement= tmp4
 		UNTIL_GE
 
 		; displacement = displacement * roughness
-		; ::SHOULDO a 0:8:8 * 0:8:8 fixed point integer math routine::
+		; displacement is 0:10:6 fixed point
+		; roughness is 0:0:16 fixed point
 
 		LDY	tmp_displacement
 		LDX	#TERRAIN_ROUGHNESS
-		JSR	Math__Multiply_S16Y_S16X_S32XY
+		JSR	Math__Multiply_U16Y_U16X_U32XY
 
-		LDA	Math__product32 + 1
+		; XY/product32 = 0:10:26 fixed point
+		TXA
+		AND	#$7FFF
+		CMP	#TERRAIN_MIN_DISPLACEMENT
+		IF_LT
+			LDA	#TERRAIN_MIN_DISPLACEMENT
+		ENDIF
+
 		STA	tmp_displacement
 
 		LDA	tmp_dx
@@ -261,31 +482,9 @@ ROUTINE SetupScreen
 .A8
 
 	TransferToCgramLocation		Palette, 0
-
-	STZ	BG1HOFS
-	STZ	BG1HOFS
-
-	LDA	#$FF
-	STA	BG1VOFS
-	STA	BG1VOFS
-
-	LDA	#TM_BG1
-	STA	TM
-
-	; Generate tilemap
-	REP	#$20
-.A16
-	LDA	#CANNONS_BG1_MAP
-	STA	VMDATA
-
-	LDA	#VMAIN_INCREMENT_HIGH | VMAIN_INCREMENT_1
-	STA	VMAIN
-
-	LDA	#1
-	JSR	PixelBuffer__WriteTileMapToVram
-
-	SEP	#$20
-.A8
+	TransferToCgramLocation		Palette, 32
+	TransferToCgramLocation		Palette, 64
+	TransferToVramLocation		Tilemap, CANNONS_BG1_MAP
 
 	RTS
 
@@ -296,6 +495,31 @@ ROUTINE SetupScreen
 LABEL Palette
 	.word	$7EC5, $02E0, $001F, $3C00	; sky blue, green, red, blue
 Palette_End:
+
+;; A 62x32 tilemap of the terrain.
+.assert PIXELBUFFER_WIDTH = 64, error, "Bad config"
+.assert PIXELBUFFER_HEIGHT = 16 * 3, error, "Bad config"
+LABEL Tilemap
+	; left map
+	.repeat 16, yTile
+		.repeat 32, xTile
+			.word 64 * yTile + xTile
+		.endrepeat
+	.endrepeat
+	.repeat 16 * 32
+		.word $FFFF
+	.endrepeat
+
+	; right map
+	.repeat 16, yTile
+		.repeat 32, xTile
+			.word 64 * yTile + xTile + 32
+		.endrepeat
+	.endrepeat
+	.repeat 16 * 32
+		.word $FFFF
+	.endrepeat
+Tilemap_End:
 
 ENDMODULE
 
