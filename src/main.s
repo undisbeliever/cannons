@@ -10,6 +10,7 @@
 
 .include "terrain.h"
 .include "cannons.h"
+.include "ui.h"
 
 
 ;; Initialisation Routine
@@ -35,6 +36,8 @@ ROUTINE Main
 		JSR	Cannons__SpawnCannons
 		JSR	Terrain__CopyToVram
 
+		JSR	Ui__Init
+
 		; Prevent screen tearing
 		JSR	Screen__WaitFrame
 
@@ -45,6 +48,8 @@ ROUTINE Main
 			SEP	#$20
 .A8
 			JSR	Screen__WaitFrame
+
+			JSR	Ui__Update
 
 			REP	#$20
 .A16
