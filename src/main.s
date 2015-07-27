@@ -9,6 +9,7 @@
 .include "routines/controller.h"
 
 .include "terrain.h"
+.include "cannons.h"
 
 
 ;; Initialisation Routine
@@ -31,6 +32,8 @@ ROUTINE Main
 
 	REPEAT
 		JSR	Terrain__Generate
+		JSR	Cannons__SpawnCannons
+		JSR	Terrain__CopyToVram
 
 		; Prevent screen tearing
 		JSR	Screen__WaitFrame

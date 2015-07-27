@@ -72,6 +72,7 @@ CONFIG	TERRAIN_END_MAX, HEIGHT - TERRAIN_END_MIN
 	BYTE	endHdmaTmTable
 .code
 
+
 .A8
 .I16
 ROUTINE Generate
@@ -89,7 +90,30 @@ ROUTINE Generate
 	SEP	#$20
 .A8
 
-	JSR	SetupScreen
+	RTS
+
+
+
+.A8
+.I16
+ROUTINE CopyToVram
+	; Prevent screen tearing
+	JSR	Screen__WaitFrame
+
+	LDA	#INIDISP_FORCE
+	STA	INIDISP
+
+	LDA	#CANNONS_SCREEN_MODE
+	STA	BGMODE
+
+	Screen_SetVramBaseAndSize	CANNONS
+
+	TransferToCgramLocation		Palette, 0
+	TransferToCgramLocation		Palette, 32
+	TransferToCgramLocation		Palette, 64
+
+	TransferToVramLocation		Tilemap, CANNONS_BG1_MAP
+
 	TransferToVramLocation PixelBuffer__buffer, CANNONS_BG1_TILES
 
 	RTS
@@ -276,6 +300,32 @@ ROUTINE VBlank
 	RTS
 
 
+
+; IN: A = xPos
+; OUT: A = yPos
+.A16
+.I16
+ROUTINE GetTopmostYposOfXpos
+	; Just uses the terrainXposTable to get the yPos to save a lot of CPU time.
+
+	; ::MAYDO use PixelBuffer__GetPixel instead if terrainXposTable is dirty ::
+
+	ASL
+	TAX
+
+	; 0:16:6 fixed point integer
+	LDA	terrainXposTable, X
+	LSR
+	LSR
+	LSR
+	LSR
+	LSR
+	LSR
+
+	RTS
+
+
+
 .A16
 .I16
 ROUTINE RenderBuffer
@@ -321,8 +371,11 @@ ROUTINE RenderBuffer
 	RTS
 
 
+
 ;; Uses the Midpoint Displacement Algorithm to generate the terrainXposTable list.
-;; This algorith is preformed in 0:7:9 fixed point math.
+;; This algorithm is preformed using 0:7:9 fixed point math.
+
+; DB = PixelBuffer__bufferBank
 .A8
 .I16
 ROUTINE GenerateTerrainTable
@@ -457,34 +510,6 @@ tmp_displacement= tmp4
 
 	SEP	#$20
 .A8
-
-	RTS
-
-
-.A8
-.I16
-ROUTINE SetupScreen
-	; Prevent screen tearing
-	JSR	Screen__WaitFrame
-
-	LDA	#INIDISP_FORCE
-	STA	INIDISP
-
-	LDA	#CANNONS_SCREEN_MODE
-	STA	BGMODE
-
-	Screen_SetVramBaseAndSize	CANNONS
-
-	REP	#$20
-.A16
-
-	SEP	#$20
-.A8
-
-	TransferToCgramLocation		Palette, 0
-	TransferToCgramLocation		Palette, 32
-	TransferToCgramLocation		Palette, 64
-	TransferToVramLocation		Tilemap, CANNONS_BG1_MAP
 
 	RTS
 
