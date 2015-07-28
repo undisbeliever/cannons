@@ -25,11 +25,21 @@ CANNON_YOFFSET		= 2
 
 CANNON_SPRITE_ORDER	= 2	; in front of BG1-BG4, behind explosions
 EXPLOSIONS_SPRITE_ORDER = 3	; in front of everything
+FLAGS_SPRITE_ORDER	= 3	; in front of everything
+TEXT_SPRITE_ORDER	= 3	; in front of everything
 
 RED_CANNON_SPRITE	= 1
 RED_DEAD_CANNON_SPRITE	= 2
+RED_CANNONBALL_SPRITE	= 3
+RED_FLAG_SPRITE		= 4
 BLUE_CANNON_SPRITE	= RED_CANNON_SPRITE + 16
 BLUE_DEAD_CANNON_SPRITE	= RED_DEAD_CANNON_SPRITE + 16
+BLUE_CANNONBALL_SPRITE	= RED_CANNONBALL_SPRITE + 16
+BLUE_FLAG_SPRITE	= RED_FLAG_SPRITE + 16
+
+FLAG_XPOS		= 24
+FLAG_YPOS		= 24
+FLAG_XSPACING		= 8
 
 .code
 
@@ -52,6 +62,7 @@ ROUTINE Update
 	JSR	MetaSprite__InitLoop
 
 	JSR	DrawCannons
+	JSR	DrawFlags
 
 	JMP	MetaSprite__FinalizeLoop
 
@@ -150,6 +161,63 @@ _DrawCannons_Continue:
 	SEP	#$20
 
 	RTS
+
+
+;; Draws the flags using metasprites
+.A8
+.I16
+ROUTINE DrawFlags
+	LDY	#RED_FLAG_SPRITE | (FLAGS_SPRITE_ORDER << OAM_CHARATTR_ORDER_SHIFT)
+	STY	MetaSprite__charAttr
+	LDY	#FLAG_XPOS
+	STY	MetaSprite__xPos
+	LDY	#FLAG_YPOS
+	STY	MetaSprite__yPos
+	STZ	MetaSprite__size
+
+	LDA	Cannons__player1Count
+	IF_NOT_ZERO
+		REPEAT
+		PHA
+
+		JSR	MetaSprite__ProcessSprite
+
+		LDA	MetaSprite__xPos
+		ADD	#FLAG_XSPACING
+		STA	MetaSprite__xPos
+
+		PLA
+		DEC
+		UNTIL_ZERO
+	ENDIF
+
+
+	LDY	#BLUE_FLAG_SPRITE | (FLAGS_SPRITE_ORDER << OAM_CHARATTR_ORDER_SHIFT)
+	STY	MetaSprite__charAttr
+	LDY	#SCREEN_WIDTH - FLAG_XPOS - FLAG_XSPACING
+	STY	MetaSprite__xPos
+	LDY	#FLAG_YPOS
+	STY	MetaSprite__yPos
+	STZ	MetaSprite__size
+
+	LDA	Cannons__player2Count
+	IF_NOT_ZERO
+		REPEAT
+		PHA
+
+		JSR	MetaSprite__ProcessSprite
+
+		LDA	MetaSprite__xPos
+		SUB	#FLAG_XSPACING
+		STA	MetaSprite__xPos
+
+		PLA
+		DEC
+		UNTIL_ZERO
+	ENDIF
+
+	RTS
+
 
 
 .segment "BANK1"

@@ -37,6 +37,7 @@ ROUTINE Main
 		JSR	Terrain__CopyToVram
 
 		JSR	Ui__Init
+		JSR	Ui__Update
 
 		; Prevent screen tearing
 		JSR	Screen__WaitFrame

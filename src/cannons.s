@@ -29,6 +29,9 @@ MODULE Cannons
 	STRUCT	cannons, CannonStruct, CANNONS_PER_PLAYER * 2
 cannons_End:
 
+	BYTE	player1Count
+	BYTE	player2Count
+
 	ADDR	currentCannon
 
 	WORD	tmp1
@@ -45,6 +48,9 @@ ROUTINE SpawnCannons
 	; player = 0
 	; leftXpos = CANNON_SPACE_TO_EDGE
 	; rightXpos = TERRAIN_WIDTH - CANNON_SPACE_TO_EDGE
+	;
+	; player1Count = CANNONS_PER_PLAYER
+	; player2Count = CANNONS_PER_PLAYER
 	;
 	; for dp in cannons:
 	;	y = Random(CANNON_MIN_SPACING, CANNON_MAX_SPACING)
@@ -75,6 +81,9 @@ tmp_rightXpos		= tmp3
 	LDX	#TERRAIN_WIDTH - CANNON_SPACE_TO_EDGE
 	STX	tmp_rightXpos
 
+	LDA	#CANNONS_PER_PLAYER
+	STA	player1Count
+	STA	player2Count
 
 	REP	#$30
 .A16

@@ -36,6 +36,12 @@ IMPORT_MODULE Cannons
 	;; List of cannons in play
 	STRUCT	cannons, CannonStruct, CANNONS_PER_PLAYER * 2
 
+	;; Number of cannons player 1 has in play
+	BYTE	player1Count
+
+	;; Number of cannons player 2 has in play
+	BYTE	player2Count
+
 	;; The current cannon the user is playing.
 	ADDR	currentCannon
 
