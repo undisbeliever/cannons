@@ -8,9 +8,7 @@
 .include "routines/screen.h"
 .include "routines/controller.h"
 
-.include "terrain.h"
-.include "cannons.h"
-.include "ui.h"
+.include "gameloop.h"
 
 
 ;; Initialisation Routine
@@ -32,51 +30,7 @@ ROUTINE Main
 	STA	MEMSEL
 
 	REPEAT
-		JSR	Terrain__Generate
-		JSR	Cannons__SpawnCannons
-		JSR	Terrain__CopyToVram
-
-		JSR	Ui__Init
-		JSR	Ui__Update
-
-		; Prevent screen tearing
-		JSR	Screen__WaitFrame
-
-		LDA	#$0F
-		STA	INIDISP
-
-		REPEAT
-			SEP	#$20
-.A8
-			JSR	Screen__WaitFrame
-
-			JSR	Ui__Update
-
-			REP	#$20
-.A16
-
-			LDA	Controller__current
-			IF_BIT	#JOY_UP
-				DEC	Terrain__vOffset
-
-			ELSE_BIT #JOY_DOWN
-				INC	Terrain__vOffset
-			ENDIF
-
-			IF_BIT	#JOY_LEFT
-				DEC	Terrain__hOffset
-
-			ELSE_BIT #JOY_RIGHT
-				INC	Terrain__hOffset
-			ENDIF
-
-			AND	#JOY_B
-		UNTIL_NOT_ZERO
-
-		SEP	#$20
-.A8
-		LDA	#INIDISP_FORCE
-		STA	INIDISP
+		JSR	Gameloop__PlayGame
 	FOREVER
 
 

@@ -32,8 +32,6 @@ cannons_End:
 	BYTE	player1Count
 	BYTE	player2Count
 
-	ADDR	currentCannon
-
 	WORD	tmp1
 	WORD	tmp2
 	WORD	tmp3

@@ -28,15 +28,19 @@ IMPORT_MODULE Terrain
 	;; NOTE: will force blank to load tiles into VRAM
 	ROUTINE CopyToVram
 
+	;; VBlank updater
+	;; REQUIRES: 8 bit A, 16 bit Index, DB access registers
+	ROUTINE VBlank
+
+	;; Sets the terrain offset so that a given x/y position is visible on the screen.
+	;; REQUIRES: 16 bit Index, DB access shadow
+	ROUTINE	CenterOnPosition
+
 	;; Returns the the yPos of the top of the terrain for a given xPos  
 	;; REQUIRES: 16 bit A, 16 bit Index, DB access shadow
 	;;
 	;; INPUT: A = xPos
 	ROUTINE GetTopmostYposOfXpos
-
-	;; VBlank updater
-	;; REQUIRES: 8 bit A, 16 bit Index, DB access registers
-	ROUTINE VBlank
 
 ENDMODULE
 

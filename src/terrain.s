@@ -300,6 +300,42 @@ ROUTINE VBlank
 	RTS
 
 
+; IN: X = xPos, Y = yPos
+ROUTINE CenterOnPosition
+	PHP
+
+	REP	#$30
+.A16
+.I16
+
+	TXA
+	SUB	#SCREEN_WIDTH / 2
+	IF_MINUS
+		LDA	#0
+	ELSE
+		CMP	#WIDTH - SCREEN_WIDTH
+		IF_GE
+			LDA	#WIDTH - SCREEN_WIDTH - 1
+		ENDIF
+	ENDIF
+
+	STA	hOffset
+
+
+	TYA
+	SUB	#SCREEN_HEIGHT / 2
+	CMP	#HEIGHT - SCREEN_HEIGHT
+	IF_SGE
+		LDA	#HEIGHT - SCREEN_HEIGHT - 1
+		STA	vOffset
+	ENDIF
+
+	STA	vOffset
+
+	PLP
+	RTS
+
+
 
 ; IN: A = xPos
 ; OUT: A = yPos

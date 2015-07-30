@@ -10,6 +10,8 @@
 ;; Number of cannons per player
 CONFIG_DEFINE CANNONS_PER_PLAYER, 3
 
+N_CANNONS = CANNONS_PER_PLAYER * 2
+
 .struct CannonStruct
 	;; If non-zero then the cannon is alive
 	alive	.byte
@@ -41,9 +43,6 @@ IMPORT_MODULE Cannons
 
 	;; Number of cannons player 2 has in play
 	BYTE	player2Count
-
-	;; The current cannon the user is playing.
-	ADDR	currentCannon
 
 
 	;; Spawns the cannons onto the map.

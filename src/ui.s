@@ -9,6 +9,7 @@
 
 .include "terrain.h"
 .include "cannons.h"
+.include "gameloop.h"
 .include "resources.h"
 .include "vram.h"
 
@@ -41,6 +42,19 @@ FLAG_XPOS		= 24
 FLAG_YPOS		= 24
 FLAG_XSPACING		= 8
 
+PRESS_START_XPOS	= (SCREEN_WIDTH - 12 * 8) / 2
+PRESS_START_YPOS	= FLAG_YPOS - 3
+
+.rodata
+LABEL	StateTable
+	.addr	AttractMode
+	.addr	ScrollToCannon
+	.addr	SelectAngle
+	.addr	SelectPower
+	.addr	Cannonball
+	.addr	Explosion
+	.addr	GameOver
+
 .code
 
 
@@ -64,7 +78,59 @@ ROUTINE Update
 	JSR	DrawCannons
 	JSR	DrawFlags
 
+	LDX	Gameloop__state
+	JSR	(.loword(StateTable), X)
+
 	JMP	MetaSprite__FinalizeLoop
+
+
+.A8
+.I16
+ROUTINE	AttractMode
+	LDY	#PRESS_START_XPOS
+	STY	MetaSprite__xPos
+	LDY	#PRESS_START_YPOS
+	STY	MetaSprite__yPos
+
+	LDY	#0
+	LDX	#.loword(PressStartMetaSprite)
+	JMP	MetaSprite__ProcessMetaSprite_Y
+
+
+.A8
+.I16
+ROUTINE ScrollToCannon
+	RTS
+
+
+.A8
+.I16
+ROUTINE SelectAngle
+	RTS
+
+
+.A8
+.I16
+ROUTINE SelectPower
+	RTS
+
+
+.A8
+.I16
+ROUTINE Cannonball
+	RTS
+
+
+.A8
+.I16
+ROUTINE	Explosion
+	RTS
+
+
+.A8
+.I16
+ROUTINE GameOver
+	RTS
 
 
 
@@ -219,12 +285,20 @@ ROUTINE DrawFlags
 	RTS
 
 
-
 .segment "BANK1"
+
 
 .exportzp MetaSpriteLayoutBank = .bankbyte(*)
 
+PressStartMetaSprite:
+	.byte 6
 
+	.repeat 6, i
+		.byte	i * 16
+		.byte	0
+		.word	4 * 16 + i * 2 + TEXT_SPRITE_ORDER << OAM_CHARATTR_ORDER_SHIFT
+		.byte	$FF
+	.endrepeat
 
 
 ENDMODULE
