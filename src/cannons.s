@@ -17,10 +17,13 @@ CONFIG CANNON_SPACE_TO_EDGE, 25
 CONFIG CANNON_MIN_SPACING, 15
 CONFIG CANNON_MAX_SPACING, TERRAIN_WIDTH / 3 / CANNONS_PER_PLAYER
 
+;; Default values for the cannons
+CONFIG	CANNON_DEFAULT_ANGLE, 45
+CONFIG	CANNON_DEFAULT_POWER, 50
+
 .assert CANNON_MAX_SPACING * CANNONS_PER_PLAYER + CANNON_SPACE_TO_EDGE * 2 < TERRAIN_WIDTH, error, "CANNON_MAX_SPACING too large"
 .assert CANNON_MIN_SPACING < CANNON_MAX_SPACING, error, "CANNON_MIN_SPACING must be smaller than CANNON_MAX_SPACING"
 .assert CANNON_MIN_SPACING > 3, error, "CANNON_MIN_SPACING too small"
-
 
 
 MODULE Cannons
@@ -53,7 +56,8 @@ ROUTINE SpawnCannons
 	; for dp in cannons:
 	;	y = Random(CANNON_MIN_SPACING, CANNON_MAX_SPACING)
 	;	dp->alive = true
-	;	dp->angle = 45
+	;	dp->angle = CANNON_DEFAULT_ANGLE
+	;	dp->power = CANNON_DEFAULT_POWER
 	;	dp->player = player
 	;
 	;	if player == 0:
@@ -96,9 +100,12 @@ tmp_rightXpos		= tmp3
 		LDY	#CANNON_MAX_SPACING
 		JSR	Random__Rnd_U16X_U16Y
 
-		LDA	#45
-		STA	z:CannonStruct::angle
+		LDA	#1
 		STA	z:CannonStruct::alive
+		LDA	#CANNON_DEFAULT_ANGLE
+		STA	z:CannonStruct::angle
+		LDA	#CANNON_DEFAULT_POWER
+		STA	z:CannonStruct::power
 
 		LDA	tmp_player
 		STA	z:CannonStruct::player

@@ -49,6 +49,9 @@ ROUTINE PlayGame
 	STX	state
 
 	REPEAT
+		JSR	Screen__WaitFrame
+		JSR	Controller__UpdateRepeatingDPad
+
 		REP	#$30
 .A16
 		LDA	selectedCannon
@@ -61,7 +64,6 @@ ROUTINE PlayGame
 		JSR	(.loword(StateTable), X)
 
 		JSR	Ui__Update
-		JSR	Screen__WaitFrame
 	FOREVER
 
 
@@ -103,13 +105,11 @@ ROUTINE	AttractMode
 
 		REP	#$20
 .A16
-		.assert .sizeof(CannonStruct) = 7, error, "Bad value"
+		.assert .sizeof(CannonStruct) = 8, error, "Bad value"
 		TYA
-		STA	tmp1
 		ASL
 		ASL
 		ASL
-		SUB	tmp1
 		ADD	#Cannons__cannons
 		TCD
 
@@ -136,7 +136,7 @@ ROUTINE	AttractMode
 	JSR	Ui__Update
 	JSR	Screen__WaitFrame
 
-	LDA	Controller__current + 1
+	LDA	Controller__pressed + 1
 	AND	#JOYH_START
 	BNE	StartGame
 
@@ -172,7 +172,7 @@ ROUTINE	StartGame
 
 
 
-; DP = currentCannon
+; DP = selectedCannon
 .A8
 .I16
 ROUTINE ScrollToCannon
@@ -188,23 +188,131 @@ ROUTINE ScrollToCannon
 
 
 
-; DP = currentCannon
+; DP = selectedCannon
 .A8
 .I16
 ROUTINE SelectAngle
+	; ::TODO get player 2 controller if player2::
+	LDA	Controller__pressed + 1
+
+	IF_BIT #JOYH_B
+		LDX	#GameState::SELECT_POWER
+		STX	state
+
+	ELSE_BIT #JOYH_UP
+		LDA	z:CannonStruct::angle
+		INC
+		CMP	#CANNON_MAX_ANGLE
+		IF_GE
+			LDA	#CANNON_MAX_ANGLE
+		ENDIF
+		STA	z:CannonStruct::angle
+
+	ELSE_BIT #JOYH_DOWN
+		.assert CANNON_MIN_ANGLE = 0, error, "Bad Value"
+		LDA	z:CannonStruct::angle
+		IF_NOT_ZERO
+			DEC
+		ENDIF
+		STA	z:CannonStruct::angle
+
+	ELSE_BIT #JOYH_RIGHT
+		LDA	z:CannonStruct::angle
+		ADD	#10
+		CMP	#CANNON_MAX_ANGLE
+		IF_GE
+			LDA	#CANNON_MAX_ANGLE
+		ENDIF
+		STA	z:CannonStruct::angle
+
+	ELSE_BIT #JOYH_LEFT
+		LDA	z:CannonStruct::angle
+		CMP	#10 + CANNON_MIN_ANGLE
+		IF_GE
+			SUB	#10
+		ELSE
+			LDA	#CANNON_MIN_ANGLE
+		ENDIF
+		STA	z:CannonStruct::angle
+	ENDIF
+
 	RTS
 
 
 
-; DP = currentCannon
+; DP = selectedCannon
 .A8
 .I16
 ROUTINE SelectPower
+	; ::TODO get player 2 controller if player2::
+	LDA	Controller__pressed
+
+	IF_BIT #JOYL_A
+		LDX	#GameState::SELECT_ANGLE
+		STX	state
+
+		RTS
+	ENDIF
+
+	; ::TODO get player 2 controller if player2::
+	LDA	Controller__pressed + 1
+
+	IF_BIT #JOYH_B
+		JMP	FireCannon
+
+	ELSE_BIT #JOYH_UP
+		LDA	z:CannonStruct::power
+		INC
+		CMP	#CANNON_MAX_POWER
+		IF_GE
+			LDA	#CANNON_MAX_POWER
+		ENDIF
+		STA	z:CannonStruct::power
+
+	ELSE_BIT #JOYH_DOWN
+		LDA	z:CannonStruct::power
+		CMP	#CANNON_MIN_POWER + 1
+		IF_GE
+			DEC
+		ENDIF
+		STA	z:CannonStruct::power
+
+	ELSE_BIT #JOYH_RIGHT
+		LDA	z:CannonStruct::power
+		ADD	#10
+		CMP	#CANNON_MAX_POWER
+		IF_GE
+			LDA	#CANNON_MAX_POWER
+		ENDIF
+		STA	z:CannonStruct::power
+
+	ELSE_BIT #JOYH_LEFT
+		LDA	z:CannonStruct::power
+		CMP	#10 + CANNON_MIN_POWER
+		IF_GE
+			SUB	#10
+		ELSE
+			LDA	#CANNON_MIN_POWER
+		ENDIF
+		STA	z:CannonStruct::power
+	ENDIF
+
 	RTS
 
 
+; DP = selectedCannon
+.A8
+.I16
+ROUTINE FireCannon
+	LDX	#GameState::CANNONBALL
+	STX	state
 
-; DP = currentCannon
+	; ::TODO fire cannon::
+
+	RTS
+
+
+; DP = selectedCannon
 .A8
 .I16
 ROUTINE Cannonball
@@ -212,7 +320,7 @@ ROUTINE Cannonball
 
 
 
-; DP = currentCannon
+; DP = selectedCannon
 .A8
 .I16
 ROUTINE	Explosion
@@ -220,7 +328,7 @@ ROUTINE	Explosion
 
 
 
-; DP = currentCannon
+; DP = selectedCannon
 .A8
 .I16
 ROUTINE GameOver

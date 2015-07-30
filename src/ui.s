@@ -5,6 +5,7 @@
 .include "includes/registers.inc"
 .include "includes/config.inc"
 .include "routines/block.h"
+.include "routines/math.h"
 .include "routines/metasprite.h"
 
 .include "terrain.h"
@@ -27,7 +28,7 @@ CANNON_YOFFSET		= 2
 CANNON_SPRITE_ORDER	= 2	; in front of BG1-BG4, behind explosions
 EXPLOSIONS_SPRITE_ORDER = 3	; in front of everything
 FLAGS_SPRITE_ORDER	= 3	; in front of everything
-TEXT_SPRITE_ORDER	= 3	; in front of everything
+TEXT_ORDER	= 3	; in front of everything
 
 RED_CANNON_SPRITE	= 1
 RED_DEAD_CANNON_SPRITE	= 2
@@ -38,12 +39,33 @@ BLUE_DEAD_CANNON_SPRITE	= RED_DEAD_CANNON_SPRITE + 16
 BLUE_CANNONBALL_SPRITE	= RED_CANNONBALL_SPRITE + 16
 BLUE_FLAG_SPRITE	= RED_FLAG_SPRITE + 16
 
+NUMBER_BOTTOM_OFFSET	= 16
+NUMBER_BOTTOM_YOFFSET	= 8
+NUMBER_XSPACING		= 9
+NUMBER_TILE_OFFSET	= 6
+NUMBER_DRAW_DIGITS	= 3
+
 FLAG_XPOS		= 24
 FLAG_YPOS		= 24
 FLAG_XSPACING		= 8
 
+TEXT_YPOS		= FLAG_YPOS - 3
+
 PRESS_START_XPOS	= (SCREEN_WIDTH - 12 * 8) / 2
-PRESS_START_YPOS	= FLAG_YPOS - 3
+PRESS_START_YPOS	= TEXT_YPOS
+
+ANGLE_XPOS		= (SCREEN_WIDTH - 8 * NUMBER_XSPACING - 32) / 2
+ANGLE_YPOS		= TEXT_YPOS
+ANGLE_SELECTED_PALETTE	= 1
+ANGLE_NORMAL_PALETTE	= 0
+
+POWER_XPOS		= ANGLE_XPOS + 5 * NUMBER_XSPACING
+POWER_YPOS		= TEXT_YPOS
+POWER_SELECTED_PALETTE	= 1
+POWER_NORMAL_PALETTE	= 0
+
+ANGLE_DEGREES_TILE	= $20
+
 
 .rodata
 LABEL	StateTable
@@ -54,6 +76,14 @@ LABEL	StateTable
 	.addr	Cannonball
 	.addr	Explosion
 	.addr	GameOver
+
+
+.segment "SHADOW"
+
+	WORD	tmp1
+	WORD	tmp2
+	WORD	tmp3
+
 
 .code
 
@@ -103,21 +133,35 @@ ROUTINE ScrollToCannon
 	RTS
 
 
+; DP = cannon
 .A8
 .I16
 ROUTINE SelectAngle
+	LDY	#ANGLE_SELECTED_PALETTE
+	JSR	DrawAngle
+
+	LDY	#POWER_NORMAL_PALETTE
+	JSR	DrawPower
+
 	RTS
 
 
 .A8
 .I16
 ROUTINE SelectPower
+	LDY	#ANGLE_NORMAL_PALETTE
+	JSR	DrawAngle
+
+	LDY	#POWER_SELECTED_PALETTE
+	JSR	DrawPower
+
 	RTS
 
 
 .A8
 .I16
 ROUTINE Cannonball
+
 	RTS
 
 
@@ -157,6 +201,7 @@ ROUTINE DrawCannons
 	;
 	;	MetaSprite__ProcessSprite(xPos, yPos, charAttr, size)
 
+	PHD
 	STZ	MetaSprite__size
 	
 	REP	#$30
@@ -226,7 +271,9 @@ _DrawCannons_Continue:
 
 	SEP	#$20
 
+	PLD
 	RTS
+
 
 
 ;; Draws the flags using metasprites
@@ -285,6 +332,137 @@ ROUTINE DrawFlags
 	RTS
 
 
+
+; Y = palette
+; DP = selectedCannon
+.A8
+.I16
+ROUTINE	DrawAngle
+	LDX	#ANGLE_XPOS
+	STX	MetaSprite__xPos
+	LDX	#ANGLE_YPOS
+	STX	MetaSprite__yPos
+
+	LDA	z:CannonStruct::angle
+	JSR	DrawNumber_8A
+
+	LDA	#ANGLE_DEGREES_TILE
+	STA	MetaSprite__charAttr
+	JSR	MetaSprite__ProcessSprite
+
+	RTS
+
+
+
+; Y = palette
+; DP = selectedCannon
+.A8
+.I16
+ROUTINE	DrawPower
+	LDX	#POWER_XPOS
+	STX	MetaSprite__xPos
+	LDX	#POWER_YPOS
+	STX	MetaSprite__yPos
+
+	LDA	z:CannonStruct::power
+	JSR	DrawNumber_8A
+
+	STZ	MetaSprite__charAttr
+	LDX	#.loword(PowerMetaSprite)
+	JSR	MetaSprite__ProcessMetaSprite
+
+	RTS
+
+
+
+; MetaSprite__xPos = xPos
+; MetaSprite__yPos = yPos
+; Y = palete
+; A = number
+; OUT: MetaSprite__xPos = end of text
+.A8
+.I16
+ROUTINE DrawNumber_8A
+
+tmp_charAttr	= tmp1
+tmp_endOfXpos	= tmp2
+tmp_oldYpos	= tmp3
+
+
+	REP	#$30
+.A16
+	AND	#$00FF
+	TAX
+
+	.assert OAM_CHARATTR_PALETTE_SHIFT = 9, error, "Bad Value"
+	TYA
+	AND	#7
+	XBA
+	ASL
+	ORA	#NUMBER_TILE_OFFSET + TEXT_ORDER << OAM_CHARATTR_ORDER_SHIFT
+	STA	tmp_charAttr
+
+	LDA	MetaSprite__yPos
+	STA	tmp_oldYpos
+
+	LDA	MetaSprite__xPos
+	ADD	#NUMBER_XSPACING * (NUMBER_DRAW_DIGITS - 1)
+	STA	MetaSprite__xPos
+	ADD	#NUMBER_XSPACING
+	STA	tmp_endOfXpos
+
+	TXY
+
+	SEP	#$20
+.A8
+	STZ	MetaSprite__size
+
+	REPEAT
+		; Y = number
+		LDA	#10
+		JSR	Math__Divide_U16Y_U8A
+
+		PHY
+
+		REP	#$30
+.A16
+		TXA
+		ADD	tmp_charAttr
+		STA	MetaSprite__charAttr
+
+		SEP	#$20
+.A8
+
+		JSR	MetaSprite__ProcessSprite
+
+		LDA	MetaSprite__yPos
+		ADD	#NUMBER_BOTTOM_YOFFSET
+		STA	MetaSprite__yPos
+
+		LDA	MetaSprite__charAttr
+		ADD	#NUMBER_BOTTOM_OFFSET
+		STA	MetaSprite__charAttr
+
+		JSR	MetaSprite__ProcessSprite
+
+		; Restore old yPos
+		LDA	tmp_oldYpos
+		STA	MetaSprite__yPos
+
+		LDA	MetaSprite__xPos
+		SUB	#NUMBER_XSPACING
+		STA	MetaSprite__xPos
+
+		PLY
+	UNTIL_ZERO
+
+	LDX	tmp_endOfXpos
+	STX	MetaSprite__xPos
+
+	RTS
+
+
+
 .segment "BANK1"
 
 
@@ -296,10 +474,20 @@ PressStartMetaSprite:
 	.repeat 6, i
 		.byte	i * 16
 		.byte	0
-		.word	4 * 16 + i * 2 + TEXT_SPRITE_ORDER << OAM_CHARATTR_ORDER_SHIFT
+		.word	$40 + i * 2 + TEXT_ORDER << OAM_CHARATTR_ORDER_SHIFT
 		.byte	$FF
 	.endrepeat
 
+PowerMetaSprite:
+	.byte	2
+
+	; Do not show ORDER - uses palette from DrawNumber_8A
+	.repeat 2, i
+		.byte	i * 16
+		.byte	0
+		.word	$21 + i * 2
+		.byte	$FF
+	.endrepeat
 
 ENDMODULE
 
