@@ -49,7 +49,7 @@ ROUTINE PlayGame
 	STX	state
 
 	REPEAT
-		JSR	Screen__WaitFrame
+		JSR	Random__AddJoypadEntropy
 		JSR	Controller__UpdateRepeatingDPad
 
 		REP	#$30
@@ -64,6 +64,7 @@ ROUTINE PlayGame
 		JSR	(.loword(StateTable), X)
 
 		JSR	Ui__Update
+		JSR	Screen__WaitFrame
 	FOREVER
 
 
