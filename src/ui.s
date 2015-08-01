@@ -22,13 +22,19 @@ SCREEN_HEIGHT		= 224
 CANNON_WIDTH		= 3
 CANNON_HEIGHT		= 5	; 2 for body, 3 for arm
 
-CANNON_XOFFSET		= 1
-CANNON_YOFFSET		= 2
+CANNON_XOFFSET		= -1
+CANNON_YOFFSET		= -2
+
+CANNON_AIM_XOFFSET	= 0
+CANNON_AIM_YOFFSET	= -1
+CANNON_AIM_COUNT	= 5
+CANNON_AIM_TILE		= 16
 
 CANNON_SPRITE_ORDER	= 2	; in front of BG1-BG4, behind explosions
+CANNON_AIM_SPRITE_ORDER	= 3	; in front of everything
 EXPLOSIONS_SPRITE_ORDER = 3	; in front of everything
 FLAGS_SPRITE_ORDER	= 3	; in front of everything
-TEXT_ORDER	= 3	; in front of everything
+TEXT_ORDER		= 3	; in front of everything
 
 RED_CANNON_SPRITE	= 1
 RED_DEAD_CANNON_SPRITE	= 2
@@ -137,6 +143,8 @@ ROUTINE ScrollToCannon
 .A8
 .I16
 ROUTINE SelectAngle
+	JSR	DrawAimCrosshairs
+
 	LDY	#ANGLE_SELECTED_PALETTE
 	JSR	DrawAngle
 
@@ -149,6 +157,8 @@ ROUTINE SelectAngle
 .A8
 .I16
 ROUTINE SelectPower
+	JSR	DrawAimCrosshairs
+
 	LDY	#ANGLE_NORMAL_PALETTE
 	JSR	DrawAngle
 
@@ -211,7 +221,7 @@ ROUTINE DrawCannons
 	REPEAT
 		TCD
 
-		.assert CANNON_XOFFSET = 1, error, "bad value"
+		.assert CANNON_XOFFSET = -1, error, "bad value"
 		LDA	z:CannonStruct::xPos
 		DEC
 		SUB	Terrain__hOffset
@@ -224,7 +234,7 @@ ROUTINE DrawCannons
 		STA	MetaSprite__xPos
 
 
-		.assert CANNON_YOFFSET = 2, error, "bad value"
+		.assert CANNON_YOFFSET = -2, error, "bad value"
 		LDA	z:CannonStruct::yPos
 		DEC
 		DEC
@@ -370,6 +380,87 @@ ROUTINE	DrawPower
 	STZ	MetaSprite__charAttr
 	LDX	#.loword(PowerMetaSprite)
 	JSR	MetaSprite__ProcessMetaSprite
+
+	RTS
+
+
+
+; DP = selectedCannon
+.A8
+.I16
+ROUTINE DrawAimCrosshairs
+	; Cannons__SetCannonBallVelocity()
+	; size = 0
+	; charAttr = CANNON_AIM_TILE + CANNON_AIM_SPRITE_ORDER << OAM_CHARATTR_ORDER_SHIFT
+	; xPos = dp->xPos - Terrain__hOffset - CANNON_AIM_XOFFSET
+	; yPos = dp->yPos - Terrain__vOffset - CANNON_AIM_YOFFSET
+	;
+	; for i = CANNON_AIM_COUNT to 0:
+	;	xPos += cannonball.xVecl	// include fractional component
+	;	yPos += cannonball.yVecl	// include fractional component
+
+tmp_counter	= tmp1
+tmp_xFractional	= tmp2
+tmp_yFractional = tmp3
+
+	JSR	Cannons__SetCannonBallVelocity
+
+	STZ	MetaSprite__size
+	
+	REP	#$30
+.A16
+	LDA	#CANNON_AIM_TILE + CANNON_AIM_SPRITE_ORDER << OAM_CHARATTR_ORDER_SHIFT
+	STA	MetaSprite__charAttr
+
+	.assert CANNON_AIM_XOFFSET = 0, error, "bad value"
+	LDA	z:CannonStruct::xPos
+	SUB	Terrain__hOffset
+	STA	MetaSprite__xPos
+
+
+	.assert CANNON_AIM_YOFFSET = -1, error, "bad value"
+	LDA	z:CannonStruct::yPos
+	DEC
+	SUB	Terrain__vOffset
+	STA	MetaSprite__yPos
+
+	LDA	#CANNON_AIM_COUNT
+	STA	tmp_counter
+
+	STZ	tmp_xFractional
+	STZ	tmp_yFractional
+
+	REPEAT
+		REP	#$30
+.A16
+		CLC
+		LDA	tmp_xFractional
+		ADC	Cannons__cannonBall + CannonBallStruct::xVecl
+		STA	tmp_xFractional
+
+		LDA	MetaSprite__xPos
+		ADC	Cannons__cannonBall + CannonBallStruct::xVecl + 2
+		STA	MetaSprite__xPos
+
+
+		CLC
+		LDA	tmp_yFractional
+		ADC	Cannons__cannonBall + CannonBallStruct::yVecl
+		STA	tmp_yFractional
+
+		LDA	MetaSprite__yPos
+		ADC	Cannons__cannonBall + CannonBallStruct::yVecl + 2
+		STA	MetaSprite__yPos
+
+		SEP	#$30
+.A8
+		JSR	MetaSprite__ProcessSprite
+
+		DEC	tmp_counter
+	UNTIL_ZERO
+
+	SEP	#$20
+.A8
 
 	RTS
 

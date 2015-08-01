@@ -16,7 +16,7 @@ N_CANNONS = CANNONS_PER_PLAYER * 2
 CANNON_MIN_ANGLE = 0
 CANNON_MAX_ANGLE = 180
 
-CANNON_MIN_POWER = 1
+CANNON_MIN_POWER = 10
 CANNON_MAX_POWER = 200
 
 .struct CannonStruct
@@ -32,7 +32,7 @@ CANNON_MAX_POWER = 200
 	angle	.byte
 
 	;; The current power of the cannon
-	;; Values are 0 to 200.
+	;; 0:4:4 fixed point integer
 	power	.byte
 
 	;; The cannon's x Position on the map
@@ -44,7 +44,30 @@ CANNON_MAX_POWER = 200
 	yPos	.word
 .endstruct
 
+
+.struct CannonBallStruct
+	;; Cannonball's xPos
+	;; 1:15:16 fixed point
+	xPos	.res 4
+
+	;; Cannonball's xPos
+	;; 1:15:16 fixed point
+	yPos	.res 4
+
+
+	;; Cannonball's xVelocity
+	;; 1:15:16 fixed point
+	xVecl	.res 4
+
+	;; Cannonball's xVelocity
+	;; 1:15:16 fixed point
+	yVecl	.res 4
+.endstruct
+
+
 IMPORT_MODULE Cannons
+	;; The Cannonball
+	STRUCT	cannonBall, CannonBallStruct
 
 	;; List of cannons in play
 	STRUCT	cannons, CannonStruct, CANNONS_PER_PLAYER * 2
@@ -59,6 +82,12 @@ IMPORT_MODULE Cannons
 	;; Spawns the cannons onto the map.
 	;; REQUIRE: 8 bit A, 16 bit Index, DB=$7E
 	ROUTINE SpawnCannons
+
+	;; Updates the cannon ball's x and y velocity
+	;; REQUIRE: 8 bit A, 16 bit Index, DB access registers
+	;;
+	;; INPUT: DP = cannon
+	ROUTINE	SetCannonBallVelocity
 
 
 ENDMODULE

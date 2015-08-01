@@ -305,6 +305,8 @@ ROUTINE SelectPower
 .A8
 .I16
 ROUTINE FireCannon
+	JSR	Cannons__SetCannonBallVelocity
+
 	LDX	#GameState::CANNONBALL
 	STX	state
 

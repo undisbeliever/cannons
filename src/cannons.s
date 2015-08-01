@@ -29,6 +29,8 @@ CONFIG	CANNON_DEFAULT_POWER, 50
 MODULE Cannons
 
 .segment "SHADOW"
+	STRUCT	cannonBall, CannonBallStruct
+
 	STRUCT	cannons, CannonStruct, CANNONS_PER_PLAYER * 2
 cannons_End:
 
@@ -144,6 +146,124 @@ tmp_rightXpos		= tmp3
 	SEP	#$20
 .A8
 	RTS
+
+
+
+; DP = cannon
+; OUT: cannonBall's xVecl, yVecl
+.A8
+.I16
+ROUTINE SetCannonBallVelocity
+	; cannonBall.yVecl = - sineTable[angle] * dp->power
+	;
+	; cannonBall.xVecl = - sineTable[angle + 90] * dp->power
+	;
+	; if dp->player != 0:
+	;	cannonBall.xVecl = -cannonBall.xVecl
+	;
+
+.assert CANNON_MIN_ANGLE >= 0, error, "Bad Assumption"
+.assert CANNON_MAX_ANGLE + 90 < 360, error, "Bad Assumption"
+
+tmp_angle	= tmp1
+tmp_convertedPow = tmp2
+
+	REP	#$30
+.A16
+
+	LDA	z:CannonStruct::angle
+	AND	#$00FF
+	ASL
+	STA	tmp_angle
+	TAX
+
+	LDA	f:SineTable, X
+	TAX
+
+	; power = 0:4:4 - convert to 0:9:9
+	LDA	z:CannonStruct::power
+	AND	#$FF
+	ASL
+	ASL
+	ASL
+	ASL
+	ASL
+	STA	tmp_convertedPow
+
+	TAY
+
+	SEP	#$20
+.A8
+	JSR	Math__Multiply_S16Y_S16X_S32XY
+
+	REP	#$20
+.A16
+	; product32 = 1:0:15 * 0:9:9 = 1:7:24
+	; convert to 1:15:16
+
+	LDA	Math__product32 + 1
+	STA	cannonBall + CannonBallStruct::yVecl
+
+	; sign extend
+	LDA	Math__product32 + 3
+	IF_BIT	#$0080
+		ORA	#$FF00
+	ELSE
+		AND	#$00FF
+	ENDIF
+	STA	cannonBall + CannonBallStruct::yVecl + 2
+
+	NEG32	cannonBall + CannonBallStruct::yVecl
+
+
+	LDA	tmp_angle
+	ADD	#90 * 2
+	TAX
+
+	LDA	f:SineTable, X
+	TAX
+
+	LDY	tmp_convertedPow
+
+	SEP	#$20
+.A8
+	JSR	Math__Multiply_S16Y_S16X_S32XY
+
+	REP	#$20
+.A16
+	; product32 = 1:0:15 * 0:9:9 = 1:7:24
+	; convert to 1:15:16
+
+	LDA	Math__product32 + 1
+	STA	cannonBall + CannonBallStruct::xVecl
+
+	; sign extend
+	LDA	Math__product32 + 3
+	IF_BIT	#$0080
+		ORA	#$FF00
+	ELSE
+		AND	#$00FF
+	ENDIF
+	STA	cannonBall + CannonBallStruct::xVecl + 2
+
+	LDA	z:CannonStruct::player
+	AND	#$FF
+	IF_NOT_ZERO
+		NEG32	cannonBall + CannonBallStruct::xVecl
+	ENDIF
+
+
+
+	SEP	#$20
+.A8
+
+	RTS
+
+
+
+.segment "BANK1"
+
+	.include "tables/sine.inc"
 
 
 ENDMODULE

@@ -40,7 +40,6 @@ ROUTINE VBlank
 	MetaSprite_VBlank
 	Screen_VBlank
 	Controller_VBlank
-	JSR	Random__AddJoypadEntropy
 
 	; Load State
 	REP	#$30
