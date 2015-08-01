@@ -27,7 +27,8 @@ CANNON_YOFFSET		= -2
 
 CANNON_AIM_XOFFSET	= 0
 CANNON_AIM_YOFFSET	= -1
-CANNON_AIM_COUNT	= 5
+CANNON_AIM_COUNT	= 3
+CANNON_AIM_MULTIPLIER   = 2
 CANNON_AIM_TILE		= 16
 
 CANNON_SPRITE_ORDER	= 2	; in front of BG1-BG4, behind explosions
@@ -390,6 +391,9 @@ ROUTINE	DrawPower
 .I16
 ROUTINE DrawAimCrosshairs
 	; Cannons__SetCannonBallVelocity()
+	; cannonball.xVecl *= CANNON_AIM_MULTIPLIER
+	; cannonball.yVecl *= CANNON_AIM_MULTIPLIER
+	;
 	; size = 0
 	; charAttr = CANNON_AIM_TILE + CANNON_AIM_SPRITE_ORDER << OAM_CHARATTR_ORDER_SHIFT
 	; xPos = dp->xPos - Terrain__hOffset - CANNON_AIM_XOFFSET
@@ -409,16 +413,22 @@ tmp_yFractional = tmp3
 	
 	REP	#$30
 .A16
+	.assert CANNON_AIM_MULTIPLIER = 2, error, "Bad Code"
+	ASL	Cannons__cannonBall + CannonBallStruct::xVecl
+	ROL	Cannons__cannonBall + CannonBallStruct::xVecl + 2
+	ASL	Cannons__cannonBall + CannonBallStruct::yVecl
+	ROL	Cannons__cannonBall + CannonBallStruct::yVecl + 2
+
 	LDA	#CANNON_AIM_TILE + CANNON_AIM_SPRITE_ORDER << OAM_CHARATTR_ORDER_SHIFT
 	STA	MetaSprite__charAttr
 
-	.assert CANNON_AIM_XOFFSET = 0, error, "bad value"
+	.assert CANNON_AIM_XOFFSET = 0, error, "bad code"
 	LDA	z:CannonStruct::xPos
 	SUB	Terrain__hOffset
 	STA	MetaSprite__xPos
 
 
-	.assert CANNON_AIM_YOFFSET = -1, error, "bad value"
+	.assert CANNON_AIM_YOFFSET = -1, error, "bad code"
 	LDA	z:CannonStruct::yPos
 	DEC
 	SUB	Terrain__vOffset
