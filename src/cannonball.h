@@ -9,7 +9,7 @@
 
 ;; Gravity of the cannonball.
 ;; 1:15:16 fixed point
-CONFIG CANNONBALL_GRAVITY, 98 * $10000 / 50 / 10
+CONFIG CANNONBALL_GRAVITY, $10000 * 5 / 100	; 0.05 pixels/frame^2
 
 .struct CannonBallStruct
 	;; Cannonball's xPos

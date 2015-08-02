@@ -32,7 +32,7 @@ CANNON_MAX_POWER = 200
 	angle	.byte
 
 	;; The current power of the cannon
-	;; 0:4:4 fixed point integer
+	;; 0:3:5 fixed point integer
 	power	.byte
 
 	;; The cannon's x Position on the map

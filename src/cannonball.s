@@ -75,10 +75,9 @@ tmp_convertedPow = tmp2
 	LDA	f:SineTable, X
 	TAX
 
-	; power = 0:4:4 - convert to 0:9:9
+	; power = 0:3:5 - convert to 1:9:9
 	LDA	z:CannonStruct::power
 	AND	#$FF
-	ASL
 	ASL
 	ASL
 	ASL
@@ -93,7 +92,7 @@ tmp_convertedPow = tmp2
 
 	REP	#$20
 .A16
-	; product32 = 1:0:15 * 0:9:9 = 1:7:24
+	; product32 = 1:0:15 * 1:9:9 = 1:7:24
 	; convert to 1:15:16
 
 	LDA	Math__product32 + 1
@@ -126,7 +125,7 @@ tmp_convertedPow = tmp2
 
 	REP	#$20
 .A16
-	; product32 = 1:0:15 * 0:9:9 = 1:7:24
+	; product32 = 1:0:15 * 1:9:9 = 1:7:24
 	; convert to 1:15:16
 
 	LDA	Math__product32 + 1
