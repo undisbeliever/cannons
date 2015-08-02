@@ -42,6 +42,13 @@ IMPORT_MODULE Terrain
 	;; INPUT: A = xPos
 	ROUTINE GetTopmostYposOfXpos
 
+	;; Checks to see if the pixel position is sky or ground
+	;; REQUIRES: 16 bit A, 16 bit Index, DB = $80
+	;;
+	;; INPUT: X/Y the position
+	;; OUTPUT: c clear if pixel is sky, else set
+	ROUTINE IsPixelOccupied
+
 ENDMODULE
 
 .endif ; __TERRAIN_H_

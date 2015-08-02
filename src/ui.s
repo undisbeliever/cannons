@@ -34,6 +34,7 @@ CANNON_AIM_TILE		= 16
 
 CANNON_SPRITE_ORDER	= 2	; in front of BG1-BG4, behind explosions
 CANNON_AIM_SPRITE_ORDER	= 3	; in front of everything
+CANNONBALL_SPRITE_ORDER = 3	; in front of everything
 EXPLOSIONS_SPRITE_ORDER = 3	; in front of everything
 FLAGS_SPRITE_ORDER	= 3	; in front of everything
 TEXT_ORDER		= 3	; in front of everything
@@ -111,6 +112,14 @@ ROUTINE Init
 .A8
 .I16
 ROUTINE Update
+	LDX	Gameloop__state
+	CPX	#GameState::CANNONBALL
+	IF_EQ
+		LDX	CannonBall__cannonBall + CannonBallStruct::xPos + 2
+		LDY	CannonBall__cannonBall + CannonBallStruct::yPos + 2
+		JSR	Terrain__CenterOnPosition
+	ENDIF
+
 	JSR	MetaSprite__InitLoop
 
 	JSR	DrawCannons
@@ -156,6 +165,7 @@ ROUTINE SelectAngle
 	RTS
 
 
+; DP = cannon
 .A8
 .I16
 ROUTINE SelectPower
@@ -170,19 +180,59 @@ ROUTINE SelectPower
 	RTS
 
 
+
+; DP = cannon
 .A8
 .I16
 ROUTINE Cannonball
+	; if dp->player == 0:
+	;	charAttr = RED_CANNONBALL_SPRITE + CANNONBALL_SPRITE_ORDER << OAM_CHARATTR_ORDER_SHIFT
+	; else:
+	;	charAttr = BLUE_CANNONBALL_SPRITE + CANNONBALL_SPRITE_ORDER << OAM_CHARATTR_ORDER_SHIFT
+	;
+	; xPos = int(Cannonball__cannonBall.xPos) - Terrain__hOffset
+	; yPos = int(Cannonball__cannonBall.xPos) - Terrain__vOffset
+	; size = 0
+	; MetaSprite__ProcessSprite(xPos, yPos, charAttr, size)
+
+	REP	#$20
+.A16
+
+	LDA	z:CannonStruct::player
+	AND	#$00FF
+	IF_ZERO
+		LDA	#RED_CANNONBALL_SPRITE + CANNONBALL_SPRITE_ORDER << OAM_CHARATTR_ORDER_SHIFT
+	ELSE
+		LDA	#BLUE_CANNONBALL_SPRITE + CANNONBALL_SPRITE_ORDER << OAM_CHARATTR_ORDER_SHIFT
+	ENDIF
+	STA	MetaSprite__charAttr
+
+	LDA	CannonBall__cannonBall + CannonBallStruct::xPos + 2
+	SUB	Terrain__hOffset
+	STA	MetaSprite__xPos
+
+	LDA	CannonBall__cannonBall + CannonBallStruct::yPos + 2
+	SUB	Terrain__vOffset
+	STA	MetaSprite__yPos
+
+	SEP	#$20
+.A8
+
+	STZ	MetaSprite__size
+	JSR	MetaSprite__ProcessSprite
 
 	RTS
 
 
+
+; DP = cannon
 .A8
 .I16
 ROUTINE	Explosion
 	RTS
 
 
+; DP = cannon
 .A8
 .I16
 ROUTINE GameOver

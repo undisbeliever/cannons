@@ -25,6 +25,26 @@ MODULE CannonBall
 
 
 ; DP = cannon
+.I16
+ROUTINE SetPosition
+	; cannonBall.xPos = dp->xPos
+	; cannonBall.yPos = dp->yPos
+
+	LDX	#0
+	STX	cannonBall + CannonBallStruct::xPos
+	STX	cannonBall + CannonBallStruct::yPos
+
+	LDX	z:CannonStruct::xPos
+	STX	cannonBall + CannonBallStruct::xPos + 2
+
+	LDX	z:CannonStruct::yPos
+	STX	cannonBall + CannonBallStruct::yPos + 2
+
+	RTS
+
+
+
+; DP = cannon
 ; OUT: cannonBall's xVecl, yVecl
 .A8
 .I16
@@ -127,13 +147,77 @@ tmp_convertedPow = tmp2
 		NEG32	cannonBall + CannonBallStruct::xVecl
 	ENDIF
 
-
-
 	SEP	#$20
 .A8
 
 	RTS
 
+
+
+.A16
+.I16
+ROUTINE Update
+	; cannonBall.xPos += cannonBall.xVecl
+	; cannonBall.yPos += cannonBall.yVecl
+	;
+	; if cannonBall.xPos < 0 | cannonBall.xPos >= TERRAIN_WIDTH | cannonBall.yPos >= TERRAIN_HEIGHT:
+	;	return CannonBallState::OUT_OF_BOUNDS
+	;
+	; cannonBall.yVecl += CANNONBALL_GRAVITY
+	;
+	; if Terrain__IsPixelOccupied(cannonBall.xPos, cannonBall.yPos)
+	;	return CannonBallState::HIT_GROUND
+	; else:
+	; 	return CannonBallState::FLYING
+
+	CLC
+	LDA	cannonBall + CannonBallStruct::xPos
+	ADC	cannonBall + CannonBallStruct::xVecl
+	STA	cannonBall + CannonBallStruct::xPos
+	LDA	cannonBall + CannonBallStruct::xPos + 2
+	ADC	cannonBall + CannonBallStruct::xVecl + 2
+	STA	cannonBall + CannonBallStruct::xPos + 2
+
+	BMI	Update_OutOfBounds
+	CMP	#TERRAIN_WIDTH
+	BSGE	Update_OutOfBounds
+
+
+	CLC
+	LDA	cannonBall + CannonBallStruct::yPos
+	ADC	cannonBall + CannonBallStruct::yVecl
+	STA	cannonBall + CannonBallStruct::yPos
+	LDA	cannonBall + CannonBallStruct::yPos + 2
+	ADC	cannonBall + CannonBallStruct::yVecl + 2
+	STA	cannonBall + CannonBallStruct::yPos + 2
+
+	CMP	#TERRAIN_HEIGHT
+	IF_SGE
+Update_OutOfBounds:
+		LDA	#CannonBallState::OUT_OF_BOUNDS
+		RTS
+	ENDIF
+
+	CLC
+	LDA	cannonBall + CannonBallStruct::yVecl
+	ADC	#.loword(CANNONBALL_GRAVITY)
+	STA	cannonBall + CannonBallStruct::yVecl
+	LDA	cannonBall + CannonBallStruct::yVecl + 2
+	ADC	#.hiword(CANNONBALL_GRAVITY)
+	STA	cannonBall + CannonBallStruct::yVecl + 2
+
+
+	LDX	cannonBall + CannonBallStruct::xPos + 2
+	LDY	cannonBall + CannonBallStruct::yPos + 2
+	JSR	Terrain__IsPixelOccupied
+
+	IF_C_SET
+		LDA	#CannonBallState::HIT_GROUND
+		RTS
+	ENDIF
+
+	LDA	#CannonBallState::FLYING
+	RTS
 
 
 .segment "BANK1"

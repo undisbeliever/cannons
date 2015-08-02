@@ -306,12 +306,13 @@ ROUTINE SelectPower
 .A8
 .I16
 ROUTINE FireCannon
+	JSR	CannonBall__SetPosition
 	JSR	CannonBall__SetVelocity
 
 	LDX	#GameState::CANNONBALL
 	STX	state
 
-	; ::TODO fire cannon::
+	; ::SOUND fire cannon::
 
 	RTS
 
@@ -320,6 +321,19 @@ ROUTINE FireCannon
 .A8
 .I16
 ROUTINE Cannonball
+	REP	#$30
+.A16
+	JSR	CannonBall__Update
+
+	SEP	#$20
+.A8
+
+	IF_NOT_ZERO
+		; ::TODO explosion::
+		; ::TODO select next cannon::
+		JSR	ScrollToCannon
+	ENDIF
+
 	RTS
 
 

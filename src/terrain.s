@@ -362,6 +362,25 @@ ROUTINE GetTopmostYposOfXpos
 
 
 
+; IN: X/Y = pixel position
+.A16
+.I16
+ROUTINE IsPixelOccupied
+	PEA	.bankbyte(*) << 8 | PixelBuffer__bufferBank
+	PLB
+
+	JSR	PixelBuffer__GetPixel
+
+	PLB
+
+	.assert SKY = 0, error, "Bad assumption"
+	CMP	#1
+
+	; carry clear if A = 0, set if A != 0
+	RTS
+
+
+
 .A16
 .I16
 ROUTINE RenderBuffer

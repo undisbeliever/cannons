@@ -7,6 +7,9 @@
 .include "includes/registers.inc"
 .include "includes/config.inc"
 
+;; Gravity of the cannonball.
+;; 1:15:16 fixed point
+CONFIG CANNONBALL_GRAVITY, 98 * $10000 / 50 / 10
 
 .struct CannonBallStruct
 	;; Cannonball's xPos
@@ -27,10 +30,23 @@
 	yVecl	.res 4
 .endstruct
 
+.enum CannonBallState
+	FLYING
+	OUT_OF_BOUNDS
+	HIT_GROUND
+	HIT_CANNON
+.endenum
+
+.assert CannonBallState::FLYING = 0, error, "Bad Value"
+
 
 IMPORT_MODULE CannonBall
 	;; The Cannonball
 	STRUCT	cannonBall, CannonBallStruct
+
+	;; Sets the cannonball's position to the cannon's position
+	;; REQUIRE: 16 bit Index, DB access shadow
+	ROUTINE	SetPosition
 
 	;; Updates the cannon ball's x and y velocity
 	;; REQUIRE: 8 bit A, 16 bit Index, DB access registers
@@ -38,6 +54,15 @@ IMPORT_MODULE CannonBall
 	;; INPUT: DP = cannon
 	ROUTINE	SetVelocity
 
+
+	;; Processes a single frame of a cannonball.
+	;;
+	;; REQUIRE: 16 bit A, 16 bit Index, DP access shadow
+	;;
+	;; RETURN: Cannonstate enum determing state of cannon
+	;;	X - address of cannon if hit by cannonball, else 0
+	;;	Zero flag set if not hit by anything
+	ROUTINE Update
 
 ENDMODULE
 
