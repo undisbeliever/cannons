@@ -10,6 +10,7 @@
 .include "routines/random.h"
 
 .include "terrain.h"
+.include "cannonball.h"
 .include "cannons.h"
 .include "ui.h"
 
@@ -305,7 +306,7 @@ ROUTINE SelectPower
 .A8
 .I16
 ROUTINE FireCannon
-	JSR	Cannons__SetCannonBallVelocity
+	JSR	CannonBall__SetVelocity
 
 	LDX	#GameState::CANNONBALL
 	STX	state

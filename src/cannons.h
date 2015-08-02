@@ -45,30 +45,7 @@ CANNON_MAX_POWER = 200
 .endstruct
 
 
-.struct CannonBallStruct
-	;; Cannonball's xPos
-	;; 1:15:16 fixed point
-	xPos	.res 4
-
-	;; Cannonball's xPos
-	;; 1:15:16 fixed point
-	yPos	.res 4
-
-
-	;; Cannonball's xVelocity
-	;; 1:15:16 fixed point
-	xVecl	.res 4
-
-	;; Cannonball's xVelocity
-	;; 1:15:16 fixed point
-	yVecl	.res 4
-.endstruct
-
-
 IMPORT_MODULE Cannons
-	;; The Cannonball
-	STRUCT	cannonBall, CannonBallStruct
-
 	;; List of cannons in play
 	STRUCT	cannons, CannonStruct, CANNONS_PER_PLAYER * 2
 
@@ -82,13 +59,6 @@ IMPORT_MODULE Cannons
 	;; Spawns the cannons onto the map.
 	;; REQUIRE: 8 bit A, 16 bit Index, DB=$7E
 	ROUTINE SpawnCannons
-
-	;; Updates the cannon ball's x and y velocity
-	;; REQUIRE: 8 bit A, 16 bit Index, DB access registers
-	;;
-	;; INPUT: DP = cannon
-	ROUTINE	SetCannonBallVelocity
-
 
 ENDMODULE
 

@@ -9,6 +9,7 @@
 .include "routines/metasprite.h"
 
 .include "terrain.h"
+.include "cannonball.h"
 .include "cannons.h"
 .include "gameloop.h"
 .include "resources.h"
@@ -390,7 +391,7 @@ ROUTINE	DrawPower
 .A8
 .I16
 ROUTINE DrawAimCrosshairs
-	; Cannons__SetCannonBallVelocity()
+	; CannonBall__SetVelocity()
 	; cannonball.xVecl *= CANNON_AIM_MULTIPLIER
 	; cannonball.yVecl *= CANNON_AIM_MULTIPLIER
 	;
@@ -407,17 +408,17 @@ tmp_counter	= tmp1
 tmp_xFractional	= tmp2
 tmp_yFractional = tmp3
 
-	JSR	Cannons__SetCannonBallVelocity
+	JSR	CannonBall__SetVelocity
 
 	STZ	MetaSprite__size
 	
 	REP	#$30
 .A16
 	.assert CANNON_AIM_MULTIPLIER = 2, error, "Bad Code"
-	ASL	Cannons__cannonBall + CannonBallStruct::xVecl
-	ROL	Cannons__cannonBall + CannonBallStruct::xVecl + 2
-	ASL	Cannons__cannonBall + CannonBallStruct::yVecl
-	ROL	Cannons__cannonBall + CannonBallStruct::yVecl + 2
+	ASL	CannonBall__cannonBall + CannonBallStruct::xVecl
+	ROL	CannonBall__cannonBall + CannonBallStruct::xVecl + 2
+	ASL	CannonBall__cannonBall + CannonBallStruct::yVecl
+	ROL	CannonBall__cannonBall + CannonBallStruct::yVecl + 2
 
 	LDA	#CANNON_AIM_TILE + CANNON_AIM_SPRITE_ORDER << OAM_CHARATTR_ORDER_SHIFT
 	STA	MetaSprite__charAttr
@@ -445,21 +446,21 @@ tmp_yFractional = tmp3
 .A16
 		CLC
 		LDA	tmp_xFractional
-		ADC	Cannons__cannonBall + CannonBallStruct::xVecl
+		ADC	CannonBall__cannonBall + CannonBallStruct::xVecl
 		STA	tmp_xFractional
 
 		LDA	MetaSprite__xPos
-		ADC	Cannons__cannonBall + CannonBallStruct::xVecl + 2
+		ADC	CannonBall__cannonBall + CannonBallStruct::xVecl + 2
 		STA	MetaSprite__xPos
 
 
 		CLC
 		LDA	tmp_yFractional
-		ADC	Cannons__cannonBall + CannonBallStruct::yVecl
+		ADC	CannonBall__cannonBall + CannonBallStruct::yVecl
 		STA	tmp_yFractional
 
 		LDA	MetaSprite__yPos
-		ADC	Cannons__cannonBall + CannonBallStruct::yVecl + 2
+		ADC	CannonBall__cannonBall + CannonBallStruct::yVecl + 2
 		STA	MetaSprite__yPos
 
 		SEP	#$30
