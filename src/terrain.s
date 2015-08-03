@@ -363,9 +363,28 @@ ROUTINE GetTopmostYposOfXpos
 
 
 ; IN: X/Y = pixel position
+; OUT: c clear if sky
 .A16
 .I16
 ROUTINE IsPixelOccupied
+	; Bounds checking
+
+	CPX	#0
+	BSLT	_IsPixelOccupied_OffScreen
+
+	CPX	#TERRAIN_WIDTH
+	BSGE	_IsPixelOccupied_OffScreen
+
+	CPY	#0
+	BSLT	_IsPixelOccupied_OffScreen
+
+	CPY	#TERRAIN_HEIGHT
+	IF_SGE
+_IsPixelOccupied_OffScreen:
+		CLC
+		RTS
+	ENDIF
+
 	PEA	.bankbyte(*) << 8 | PixelBuffer__bufferBank
 	PLB
 
