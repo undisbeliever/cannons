@@ -64,18 +64,18 @@ SMALL_EXPLOSION_YOFFSET	= -4
 
 TEXT_YPOS		= FLAG_YPOS - 3
 
+TEXT_NORMAL_PALETTE	= 0
+TEXT_PLAYER1_PALETTE	= 1
+TEXT_PLAYER2_PALETTE	= 2
+
 PRESS_START_XPOS	= (SCREEN_WIDTH - 12 * 8) / 2
 PRESS_START_YPOS	= TEXT_YPOS
 
 ANGLE_XPOS		= (SCREEN_WIDTH - 8 * NUMBER_XSPACING - 32) / 2
 ANGLE_YPOS		= TEXT_YPOS
-ANGLE_SELECTED_PALETTE	= 1
-ANGLE_NORMAL_PALETTE	= 0
 
 POWER_XPOS		= ANGLE_XPOS + 5 * NUMBER_XSPACING
 POWER_YPOS		= TEXT_YPOS
-POWER_SELECTED_PALETTE	= 1
-POWER_NORMAL_PALETTE	= 0
 
 ANGLE_DEGREES_TILE	= $20
 
@@ -115,6 +115,8 @@ LABEL	StateTable
 ROUTINE Init
 	TransferToVramLocation	Resources__Sprites_Tiles,	CANNONS_OAM_TILES
 	TransferToCgramLocation	Resources__Sprites_Palette,	128
+	TransferToCgramLocation	RedTextPalette,			128 + 16
+	TransferToCgramLocation	BlueTextPalette,		128 + 16 * 2
 
 	LDX	#0
 	STX	animation_framePtr
@@ -218,10 +220,10 @@ ROUTINE ScrollToCannon
 ROUTINE SelectAngle
 	JSR	DrawAimCrosshairs
 
-	LDY	#ANGLE_SELECTED_PALETTE
+	SEC
 	JSR	DrawAngle
 
-	LDY	#POWER_NORMAL_PALETTE
+	CLC
 	JSR	DrawPower
 
 	RTS
@@ -233,10 +235,10 @@ ROUTINE SelectAngle
 ROUTINE SelectPower
 	JSR	DrawAimCrosshairs
 
-	LDY	#ANGLE_NORMAL_PALETTE
+	CLC
 	JSR	DrawAngle
 
-	LDY	#POWER_SELECTED_PALETTE
+	SEC
 	JSR	DrawPower
 
 	RTS
@@ -304,12 +306,12 @@ ROUTINE GameOver
 	LDX	#PLAYER_WINS_YPOS
 	STX	MetaSprite__yPos
 
-	LDY	#0
-
 	LDA	Cannons__player1Count
 	IF_ZERO
+		LDY	#TEXT_PLAYER2_PALETTE << OAM_CHARATTR_PALETTE_SHIFT
 		LDX	#.loword(Player2WinsMetaSprite)
 	ELSE
+		LDY	#TEXT_PLAYER1_PALETTE << OAM_CHARATTR_PALETTE_SHIFT
 		LDX	#.loword(Player1WinsMetaSprite)
 	ENDIF
 
@@ -527,11 +529,13 @@ ROUTINE DrawFlags
 
 
 
-; Y = palette
+; C set = selection color, c clear = normal color
 ; DP = selectedCannon
 .A8
 .I16
 ROUTINE	DrawAngle
+	JSR	SetPlayerTextColor
+
 	LDX	#ANGLE_XPOS
 	STX	MetaSprite__xPos
 	LDX	#ANGLE_YPOS
@@ -548,11 +552,13 @@ ROUTINE	DrawAngle
 
 
 
-; Y = palette
+; C set = selection color, c clear = normal color
 ; DP = selectedCannon
 .A8
 .I16
 ROUTINE	DrawPower
+	JSR	SetPlayerTextColor
+
 	LDX	#POWER_XPOS
 	STX	MetaSprite__xPos
 	LDX	#POWER_YPOS
@@ -662,6 +668,29 @@ tmp_yFractional = tmp3
 	RTS
 
 
+; IN:
+;	C set = selection color, c clear = normal color
+;	DP = cannon
+; OUT: palette
+.A8
+.I16
+ROUTINE SetPlayerTextColor
+	IF_C_SET
+		LDA	z:CannonStruct::player
+		IF_ZERO
+			LDY	#TEXT_PLAYER1_PALETTE
+		ELSE
+			LDY	#TEXT_PLAYER2_PALETTE
+		ENDIF
+		RTS
+
+	ENDIF
+
+	LDY	#TEXT_NORMAL_PALETTE
+
+	RTS
+
+
 
 ; MetaSprite__xPos = xPos
 ; MetaSprite__yPos = yPos
@@ -753,6 +782,14 @@ tmp_oldYpos	= tmp3
 
 .segment "BANK1"
 
+RedTextPalette:
+	.word	$75c5, $001f, $3591, $2d6e
+RedTextPalette_End:
+
+BlueTextPalette:
+	.word	$7ec5, $7c03, $41ad, $396b
+BlueTextPalette_End:
+
 
 .exportzp MetaSpriteLayoutBank = .bankbyte(*)
 
@@ -835,7 +872,7 @@ SmallExplosionAnimation:
 		.endrepeat
 		; !
 		.repeat 2, i
-			.byte	5 * 16 + NUMBER_XSPACING * 3
+			.byte	5 * 16 + NUMBER_XSPACING * 3 + 1
 			.byte	8 * i
 			.word	$2F + i * 16 + TEXT_ORDER << OAM_CHARATTR_ORDER_SHIFT
 			.byte	0
