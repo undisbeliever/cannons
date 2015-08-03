@@ -15,7 +15,12 @@
 MODULE CannonBall
 
 .segment "SHADOW"
-	STRUCT	cannonBall, CannonBallStruct
+	UINT32	xPos
+	UINT32	yPos
+
+	UINT32	xVecl
+	UINT32	yVecl
+	
 
 	WORD	tmp1
 	WORD	tmp2
@@ -26,8 +31,8 @@ MODULE CannonBall
 
 ; DP = cannon
 ROUTINE SetPosition
-	; cannonBall.xPos = dp->xPos - CANNON_LAUNCH_XOFFSET
-	; cannonBall.yPos = dp->yPos - CANNON_LAUNCH_YOFFSET
+	; xPos = dp->xPos - CANNON_LAUNCH_XOFFSET
+	; yPos = dp->yPos - CANNON_LAUNCH_YOFFSET
 
 	PHP
 	REP	#$30
@@ -35,16 +40,16 @@ ROUTINE SetPosition
 
 	.assert CANNON_LAUNCH_XOFFSET = 0, error, "bad code"
 	LDA	z:CannonStruct::xPos
-	STA	cannonBall + CannonBallStruct::xPos + 2
-	STZ	cannonBall + CannonBallStruct::xPos
+	STA	xPos + 2
+	STZ	xPos
 
 	.assert CANNON_LAUNCH_YOFFSET = -3, error, "bad code"
 	LDA	z:CannonStruct::yPos
 	DEC
 	DEC
 	DEC
-	STA	cannonBall + CannonBallStruct::yPos + 2
-	STZ	cannonBall + CannonBallStruct::yPos
+	STA	yPos + 2
+	STZ	yPos
 
 	PLP
 
@@ -53,16 +58,16 @@ ROUTINE SetPosition
 
 
 ; DP = cannon
-; OUT: cannonBall's xVecl, yVecl
+; OUT: s xVecl, yVecl
 .A8
 .I16
 ROUTINE SetVelocity
-	; cannonBall.yVecl = - sineTable[angle] * dp->power
+	; yVecl = - sineTable[angle] * dp->power
 	;
-	; cannonBall.xVecl = - sineTable[angle + 90] * dp->power
+	; xVecl = - sineTable[angle + 90] * dp->power
 	;
 	; if dp->player != 0:
-	;	cannonBall.xVecl = -cannonBall.xVecl
+	;	xVecl = -xVecl
 	;
 
 .assert CANNON_MIN_ANGLE >= 0, error, "Bad Assumption"
@@ -101,7 +106,7 @@ tmp_convertedPow = tmp2
 	; convert to 1:15:16
 
 	LDA	Math__product32 + 1
-	STA	cannonBall + CannonBallStruct::yVecl
+	STA	yVecl
 
 	; sign extend
 	LDA	Math__product32 + 3
@@ -110,9 +115,9 @@ tmp_convertedPow = tmp2
 	ELSE
 		AND	#$00FF
 	ENDIF
-	STA	cannonBall + CannonBallStruct::yVecl + 2
+	STA	yVecl + 2
 
-	NEG32	cannonBall + CannonBallStruct::yVecl
+	NEG32	yVecl
 
 
 	LDA	tmp_angle
@@ -134,7 +139,7 @@ tmp_convertedPow = tmp2
 	; convert to 1:15:16
 
 	LDA	Math__product32 + 1
-	STA	cannonBall + CannonBallStruct::xVecl
+	STA	xVecl
 
 	; sign extend
 	LDA	Math__product32 + 3
@@ -143,12 +148,12 @@ tmp_convertedPow = tmp2
 	ELSE
 		AND	#$00FF
 	ENDIF
-	STA	cannonBall + CannonBallStruct::xVecl + 2
+	STA	xVecl + 2
 
 	LDA	z:CannonStruct::player
 	AND	#$FF
 	IF_NOT_ZERO
-		NEG32	cannonBall + CannonBallStruct::xVecl
+		NEG32	xVecl
 	ENDIF
 
 	SEP	#$20
@@ -188,30 +193,30 @@ ROUTINE Update
 .A16
 .I16
 ROUTINE UpdateSubframe
-	; cannonBall.xPos += cannonBall.xVecl
-	; cannonBall.yPos += cannonBall.yVecl
+	; xPos += xVecl
+	; yPos += yVecl
 	;
-	; if cannonBall.xPos < 0 | cannonBall.xPos >= TERRAIN_WIDTH | cannonBall.yPos >= TERRAIN_HEIGHT:
+	; if xPos < 0 | xPos >= TERRAIN_WIDTH | yPos >= TERRAIN_HEIGHT:
 	;	return CannonBallState::OUT_OF_BOUNDS
 	;
-	; cannonBall.yVecl += CANNONBALL_GRAVITY
+	; yVecl += CANNONBALL_GRAVITY
 	;
-	; X = Cannon__CheckCollision(cannonBall.xPos, cannonBall.yPos)
+	; X = Cannon__CheckCollision(xPos, yPos)
 	;
 	; if X != NULL
 	;	return CannonBallState::HIT_CANNON, X
-	; else if Terrain__IsPixelOccupied(cannonBall.xPos, cannonBall.yPos)
+	; else if Terrain__IsPixelOccupied(xPos, yPos)
 	;	return CannonBallState::HIT_GROUND
 	; else:
 	; 	return CannonBallState::FLYING
 
 	CLC
-	LDA	cannonBall + CannonBallStruct::xPos
-	ADC	cannonBall + CannonBallStruct::xVecl
-	STA	cannonBall + CannonBallStruct::xPos
-	LDA	cannonBall + CannonBallStruct::xPos + 2
-	ADC	cannonBall + CannonBallStruct::xVecl + 2
-	STA	cannonBall + CannonBallStruct::xPos + 2
+	LDA	xPos
+	ADC	xVecl
+	STA	xPos
+	LDA	xPos + 2
+	ADC	xVecl + 2
+	STA	xPos + 2
 
 	BMI	Update_OutOfBounds
 	CMP	#TERRAIN_WIDTH
@@ -219,12 +224,12 @@ ROUTINE UpdateSubframe
 
 
 	CLC
-	LDA	cannonBall + CannonBallStruct::yPos
-	ADC	cannonBall + CannonBallStruct::yVecl
-	STA	cannonBall + CannonBallStruct::yPos
-	LDA	cannonBall + CannonBallStruct::yPos + 2
-	ADC	cannonBall + CannonBallStruct::yVecl + 2
-	STA	cannonBall + CannonBallStruct::yPos + 2
+	LDA	yPos
+	ADC	yVecl
+	STA	yPos
+	LDA	yPos + 2
+	ADC	yVecl + 2
+	STA	yPos + 2
 
 	CMP	#TERRAIN_HEIGHT
 	IF_SGE
@@ -234,17 +239,17 @@ Update_OutOfBounds:
 	ENDIF
 
 	CLC
-	LDA	cannonBall + CannonBallStruct::yVecl
+	LDA	yVecl
 	ADC	#.loword(CANNONBALL_GRAVITY)
-	STA	cannonBall + CannonBallStruct::yVecl
-	LDA	cannonBall + CannonBallStruct::yVecl + 2
+	STA	yVecl
+	LDA	yVecl + 2
 	ADC	#.hiword(CANNONBALL_GRAVITY)
-	STA	cannonBall + CannonBallStruct::yVecl + 2
+	STA	yVecl + 2
 
 
 	; Check if collides with another cannon.
-	LDX	cannonBall + CannonBallStruct::xPos + 2
-	LDY	cannonBall + CannonBallStruct::yPos + 2
+	LDX	xPos + 2
+	LDY	yPos + 2
 	JSR	Cannons__CheckCollision
 
 	CPX	#0
@@ -255,8 +260,8 @@ Update_OutOfBounds:
 
 
 	; Check if collides with terrain
-	LDX	cannonBall + CannonBallStruct::xPos + 2
-	LDY	cannonBall + CannonBallStruct::yPos + 2
+	LDX	xPos + 2
+	LDY	yPos + 2
 	JSR	Terrain__IsPixelOccupied
 
 	IF_C_SET

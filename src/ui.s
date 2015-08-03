@@ -172,8 +172,8 @@ ROUTINE Update
 	LDX	Gameloop__state
 	CPX	#GameState::CANNONBALL
 	IF_EQ
-		LDX	CannonBall__cannonBall + CannonBallStruct::xPos + 2
-		LDY	CannonBall__cannonBall + CannonBallStruct::yPos + 2
+		LDX	CannonBall__xPos + 2
+		LDY	CannonBall__yPos + 2
 		JSR	Terrain__CenterOnPosition
 	ENDIF
 
@@ -266,11 +266,11 @@ ROUTINE Cannonball
 	ENDIF
 	STA	MetaSprite__charAttr
 
-	LDA	CannonBall__cannonBall + CannonBallStruct::xPos + 2
+	LDA	CannonBall__xPos + 2
 	SUB	Terrain__hOffset
 	STA	MetaSprite__xPos
 
-	LDA	CannonBall__cannonBall + CannonBallStruct::yPos + 2
+	LDA	CannonBall__yPos + 2
 	SUB	Terrain__vOffset
 	STA	MetaSprite__yPos
 
@@ -578,10 +578,10 @@ tmp_yFractional = tmp3
 .A16
 	.assert CANNON_AIM_MULTIPLIER = 16, error, "Bad Code"
 	.repeat 4
-		ASL	CannonBall__cannonBall + CannonBallStruct::xVecl
-		ROL	CannonBall__cannonBall + CannonBallStruct::xVecl + 2
-		ASL	CannonBall__cannonBall + CannonBallStruct::yVecl
-		ROL	CannonBall__cannonBall + CannonBallStruct::yVecl + 2
+		ASL	CannonBall__xVecl
+		ROL	CannonBall__xVecl + 2
+		ASL	CannonBall__yVecl
+		ROL	CannonBall__yVecl + 2
 	.endrepeat
 
 	LDA	#CANNON_AIM_TILE + CANNON_AIM_SPRITE_ORDER << OAM_CHARATTR_ORDER_SHIFT
@@ -612,21 +612,21 @@ tmp_yFractional = tmp3
 .A16
 		CLC
 		LDA	tmp_xFractional
-		ADC	CannonBall__cannonBall + CannonBallStruct::xVecl
+		ADC	CannonBall__xVecl
 		STA	tmp_xFractional
 
 		LDA	MetaSprite__xPos
-		ADC	CannonBall__cannonBall + CannonBallStruct::xVecl + 2
+		ADC	CannonBall__xVecl + 2
 		STA	MetaSprite__xPos
 
 
 		CLC
 		LDA	tmp_yFractional
-		ADC	CannonBall__cannonBall + CannonBallStruct::yVecl
+		ADC	CannonBall__yVecl
 		STA	tmp_yFractional
 
 		LDA	MetaSprite__yPos
-		ADC	CannonBall__cannonBall + CannonBallStruct::yVecl + 2
+		ADC	CannonBall__yVecl + 2
 		STA	MetaSprite__yPos
 
 		SEP	#$30

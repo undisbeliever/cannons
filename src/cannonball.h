@@ -15,25 +15,6 @@ CONFIG SUBFRAMES, 8
 CONFIG CANNONBALL_GRAVITY, $10000 * 5 / 100 / SUBFRAMES / SUBFRAMES	; 0.05 pixels/frame^2
 
 
-.struct CannonBallStruct
-	;; Cannonball's xPos
-	;; 1:15:16 fixed point
-	xPos	.res 4
-
-	;; Cannonball's xPos
-	;; 1:15:16 fixed point
-	yPos	.res 4
-
-
-	;; Cannonball's xVelocity
-	;; 1:15:16 fixed point
-	xVecl	.res 4
-
-	;; Cannonball's xVelocity
-	;; 1:15:16 fixed point
-	yVecl	.res 4
-.endstruct
-
 .enum CannonBallState
 	FLYING
 	OUT_OF_BOUNDS
@@ -45,8 +26,23 @@ CONFIG CANNONBALL_GRAVITY, $10000 * 5 / 100 / SUBFRAMES / SUBFRAMES	; 0.05 pixel
 
 
 IMPORT_MODULE CannonBall
-	;; The Cannonball
-	STRUCT	cannonBall, CannonBallStruct
+	;; Cannonball's xPos
+	;; 1:15:16 fixed point
+	UINT32	xPos
+
+	;; Cannonball's xPos
+	;; 1:15:16 fixed point
+	UINT32	yPos
+
+	;; Cannonball's xVelocity
+	;; 1:15:16 fixed point
+	UINT32	xVecl
+
+	;; Cannonball's xVelocity
+	;; 1:15:16 fixed point
+	UINT32	yVecl
+
+
 
 	;; Sets the cannonball's position to the cannon's position
 	;; REQUIRE: 16 bit Index, DB access shadow

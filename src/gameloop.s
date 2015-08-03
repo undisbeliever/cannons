@@ -407,8 +407,8 @@ ROUTINE	TerrainExplodes
 	; Ui__StartExplosionAnimation(cannonBall.xPos, cannonBall.yPos)
 	; state = GameState::EXPLOSION
 
-	LDX	CannonBall__cannonBall + CannonBallStruct::xPos + 2
-	LDY	CannonBall__cannonBall + CannonBallStruct::yPos + 2
+	LDX	CannonBall__xPos + 2
+	LDY	CannonBall__yPos + 2
 	JSR	Ui__StartSmallExplosionAnimation
 
 	LDX	#GameState::EXPLOSION
