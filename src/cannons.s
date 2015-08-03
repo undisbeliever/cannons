@@ -146,5 +146,80 @@ tmp_rightXpos		= tmp3
 	RTS
 
 
+
+; IN: X/Y the position
+; OUT: X of the address
+.A16
+.I16
+ROUTINE CheckCollision
+tmp_x	= tmp1
+tmp_y	= tmp2
+
+	STX	tmp_x
+	STY	tmp_y
+
+	LDX	#cannons
+
+	REPEAT
+		LDA	a:CannonStruct::alive, X
+		IF_BIT	#$00FF
+			LDA	a:CannonStruct::xPos, X
+			SUB	#-CANNON_XOFFSET
+			CMP	tmp_x
+			IF_LT
+				ADD	#CANNON_WIDTH
+				CMP	tmp_x
+				IF_GE
+					LDA	a:CannonStruct::yPos, X
+					SUB	#-CANNON_YOFFSET
+					CMP	tmp_y
+					IF_LT
+						ADD	#CANNON_WIDTH
+						CMP	tmp_y
+						IF_GE
+							RTS
+						ENDIF
+					ENDIF
+				ENDIF
+			ENDIF
+		ENDIF
+
+		TXA
+		ADD	#.sizeof(CannonStruct)
+		TAX
+		CPX	#cannons_End
+	UNTIL_GE
+
+	LDX	#0
+
+	RTS
+
+
+; IN: X - cannon
+; OUT: A - number of cannons left for the player
+.A8
+.I16
+ROUTINE MarkCannonDead
+	; if cannon->alive:
+	;	cannon->alive = false
+	;	if cannon->player == 0
+	;		player1Count--
+	;	else
+	;		player2Count--
+
+	LDA	a:CannonStruct::alive, X
+	IF_NOT_ZERO
+		STZ	a:CannonStruct::alive, X
+
+		LDA	a:CannonStruct::player, X
+		IF_ZERO
+			DEC	player1Count
+		ELSE
+			DEC	player2Count
+		ENDIF
+	ENDIF
+
+	RTS
+
 ENDMODULE
 

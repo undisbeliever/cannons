@@ -12,6 +12,14 @@ CONFIG_DEFINE CANNONS_PER_PLAYER, 3
 
 N_CANNONS = CANNONS_PER_PLAYER * 2
 
+CANNON_WIDTH = 3
+CANNON_XOFFSET = -1
+CANNON_HEIGHT = 2
+CANNON_YOFFSET = -2
+
+CANNON_LAUNCH_XOFFSET = 0
+CANNON_LAUNCH_YOFFSET = CANNON_YOFFSET - 1
+
 
 CANNON_MIN_ANGLE = 0
 CANNON_MAX_ANGLE = 180
@@ -59,6 +67,23 @@ IMPORT_MODULE Cannons
 	;; Spawns the cannons onto the map.
 	;; REQUIRE: 8 bit A, 16 bit Index, DB=$7E
 	ROUTINE SpawnCannons
+
+
+	;; Checks if the position occupies a cannon.
+	;; REQUIRES: 16 bit A, 16 bit Index, DB access shadow
+	;;
+	;; INPUT: X/Y the position
+	;; OUTPUT:
+	;;	X the address of the cannon, 0 if no collision occurred.
+	ROUTINE CheckCollision
+
+
+	;; Marks the cannon as dead
+	;; REQUIRES: 8 bit A, 16 bit Index, DB access shadow
+	;;
+	;; INPUT: X the address of the cannon
+	;; OUTPUT: A the number of cannons the player has left
+	ROUTINE MarkCannonDead
 
 ENDMODULE
 

@@ -20,14 +20,6 @@ MODULE Ui
 SCREEN_WIDTH		= 256
 SCREEN_HEIGHT		= 224
 
-CANNON_WIDTH		= 3
-CANNON_HEIGHT		= 5	; 2 for body, 3 for arm
-
-CANNON_XOFFSET		= -1
-CANNON_YOFFSET		= -2
-
-CANNON_AIM_XOFFSET	= 0
-CANNON_AIM_YOFFSET	= -1
 CANNON_AIM_COUNT	= 3
 CANNON_AIM_MULTIPLIER   = 2
 CANNON_AIM_TILE		= 16
@@ -447,8 +439,8 @@ ROUTINE DrawAimCrosshairs
 	;
 	; size = 0
 	; charAttr = CANNON_AIM_TILE + CANNON_AIM_SPRITE_ORDER << OAM_CHARATTR_ORDER_SHIFT
-	; xPos = dp->xPos - Terrain__hOffset - CANNON_AIM_XOFFSET
-	; yPos = dp->yPos - Terrain__vOffset - CANNON_AIM_YOFFSET
+	; xPos = dp->xPos - Terrain__hOffset - CANNON_LAUNCH_XOFFSET
+	; yPos = dp->yPos - Terrain__vOffset - CANNON_LAUNCH_YOFFSET
 	;
 	; for i = CANNON_AIM_COUNT to 0:
 	;	xPos += cannonball.xVecl	// include fractional component
@@ -473,14 +465,16 @@ tmp_yFractional = tmp3
 	LDA	#CANNON_AIM_TILE + CANNON_AIM_SPRITE_ORDER << OAM_CHARATTR_ORDER_SHIFT
 	STA	MetaSprite__charAttr
 
-	.assert CANNON_AIM_XOFFSET = 0, error, "bad code"
+	.assert CANNON_LAUNCH_XOFFSET = 0, error, "bad code"
 	LDA	z:CannonStruct::xPos
 	SUB	Terrain__hOffset
 	STA	MetaSprite__xPos
 
 
-	.assert CANNON_AIM_YOFFSET = -1, error, "bad code"
+	.assert CANNON_LAUNCH_YOFFSET = -3, error, "bad code"
 	LDA	z:CannonStruct::yPos
+	DEC
+	DEC
 	DEC
 	SUB	Terrain__vOffset
 	STA	MetaSprite__yPos

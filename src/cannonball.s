@@ -25,20 +25,28 @@ MODULE CannonBall
 
 
 ; DP = cannon
-.I16
 ROUTINE SetPosition
-	; cannonBall.xPos = dp->xPos
-	; cannonBall.yPos = dp->yPos
+	; cannonBall.xPos = dp->xPos - CANNON_LAUNCH_XOFFSET
+	; cannonBall.yPos = dp->yPos - CANNON_LAUNCH_YOFFSET
 
-	LDX	#0
-	STX	cannonBall + CannonBallStruct::xPos
-	STX	cannonBall + CannonBallStruct::yPos
+	PHP
+	REP	#$30
+.A16
 
-	LDX	z:CannonStruct::xPos
-	STX	cannonBall + CannonBallStruct::xPos + 2
+	.assert CANNON_LAUNCH_XOFFSET = 0, error, "bad code"
+	LDA	z:CannonStruct::xPos
+	STA	cannonBall + CannonBallStruct::xPos + 2
+	STZ	cannonBall + CannonBallStruct::xPos
 
-	LDX	z:CannonStruct::yPos
-	STX	cannonBall + CannonBallStruct::yPos + 2
+	.assert CANNON_LAUNCH_YOFFSET = -3, error, "bad code"
+	LDA	z:CannonStruct::yPos
+	DEC
+	DEC
+	DEC
+	STA	cannonBall + CannonBallStruct::yPos + 2
+	STZ	cannonBall + CannonBallStruct::yPos
+
+	PLP
 
 	RTS
 
@@ -164,7 +172,11 @@ ROUTINE Update
 	;
 	; cannonBall.yVecl += CANNONBALL_GRAVITY
 	;
-	; if Terrain__IsPixelOccupied(cannonBall.xPos, cannonBall.yPos)
+	; X = Cannon__CheckCollision(cannonBall.xPos, cannonBall.yPos)
+	;
+	; if X != NULL
+	;	return CannonBallState::HIT_CANNON, X
+	; else if Terrain__IsPixelOccupied(cannonBall.xPos, cannonBall.yPos)
 	;	return CannonBallState::HIT_GROUND
 	; else:
 	; 	return CannonBallState::FLYING
@@ -206,6 +218,19 @@ Update_OutOfBounds:
 	STA	cannonBall + CannonBallStruct::yVecl + 2
 
 
+	; Check if collides with another cannon.
+	LDX	cannonBall + CannonBallStruct::xPos + 2
+	LDY	cannonBall + CannonBallStruct::yPos + 2
+	JSR	Cannons__CheckCollision
+
+	CPX	#0
+	IF_NE
+		LDA	#CannonBallState::HIT_CANNON
+		RTS
+	ENDIF
+
+
+	; Check if collides with terrain
 	LDX	cannonBall + CannonBallStruct::xPos + 2
 	LDY	cannonBall + CannonBallStruct::yPos + 2
 	JSR	Terrain__IsPixelOccupied

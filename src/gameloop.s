@@ -329,10 +329,29 @@ ROUTINE Cannonball
 .A8
 
 	IF_NOT_ZERO
-		; ::TODO explosion::
+		CMP	#CannonBallState::HIT_CANNON
+		IF_EQ
+			; X = cannon
+			JMP	CannonExplodes
+		ENDIF
+
 		; ::TODO select next cannon::
 		JSR	ScrollToCannon
 	ENDIF
+
+	RTS
+
+
+; X = cannon
+.A8
+.I16
+ROUTINE	CannonExplodes
+	; ::TODO explode cannon::
+
+	JSR	Cannons__MarkCannonDead
+
+	LDX	#GameState::EXPLOSION
+	STX	state
 
 	RTS
 
