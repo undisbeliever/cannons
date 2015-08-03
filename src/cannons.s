@@ -29,7 +29,14 @@ CONFIG	CANNON_DEFAULT_POWER, 100
 MODULE Cannons
 
 .segment "SHADOW"
-	STRUCT	cannons, CannonStruct, CANNONS_PER_PLAYER * 2
+LABEL	cannons
+
+	STRUCT	player1Cannons, CannonStruct, CANNONS_PER_PLAYER
+LABEL player1Cannons_End
+
+	STRUCT	player2Cannons, CannonStruct, CANNONS_PER_PLAYER
+LABEL player2Cannons_End
+
 cannons_End:
 
 	BYTE	player1Count
@@ -47,41 +54,43 @@ cannons_End:
 .I16
 ROUTINE SpawnCannons
 	; player = 0
-	; leftXpos = CANNON_SPACE_TO_EDGE
-	; rightXpos = TERRAIN_WIDTH - CANNON_SPACE_TO_EDGE
+	; xPpos = CANNON_SPACE_TO_EDGE
 	;
 	; player1Count = CANNONS_PER_PLAYER
 	; player2Count = CANNONS_PER_PLAYER
 	;
-	; for dp in cannons:
-	;	y = Random(CANNON_MIN_SPACING, CANNON_MAX_SPACING)
+	; for dp in player1Cannons:
+	;	dp->player = 0
 	;	dp->alive = true
 	;	dp->angle = CANNON_DEFAULT_ANGLE
 	;	dp->power = CANNON_DEFAULT_POWER
-	;	dp->player = player
 	;
-	;	if player == 0:
-	;		player = 1
-	;		leftXpos += y
-	;		dp->xPos = leftXpos
-	;	else:
-	;		player = 0
-	;		rightXpos -= y
-	;		dp->xPos = rightXpos
+	;	y = Random(CANNON_MIN_SPACING, CANNON_MAX_SPACING)
+	;	xPos += y
+	;	dp->xPos = xPos
+	;	dp->yPos = Terrain__GetTopmostYposOfXpos(dp->xPos)
 	;
+	;
+	; xPos = TERRAIN_WIDTH - CANNON_SPACE_TO_EDGE
+	;
+	; for dp in player2Cannons:
+	;	dp->player = 1
+	;	dp->alive = true
+	;	dp->angle = CANNON_DEFAULT_ANGLE
+	;	dp->power = CANNON_DEFAULT_POWER
+	;
+	;	y = Random(CANNON_MIN_SPACING, CANNON_MAX_SPACING)
+	;	xPos -= y
+	;	dp->xPos = xPos
 	;	dp->yPos = Terrain__GetTopmostYposOfXpos(dp->xPos)
 
 tmp_player		= tmp1
-tmp_leftXpos		= tmp2
-tmp_rightXpos		= tmp3
+tmp_xPos		= tmp2
 
 	STZ	tmp_player
 
 	LDX	#CANNON_SPACE_TO_EDGE
-	STX	tmp_leftXpos
-
-	LDX	#TERRAIN_WIDTH - CANNON_SPACE_TO_EDGE
-	STX	tmp_rightXpos
+	STX	tmp_xPos
 
 	LDA	#CANNONS_PER_PLAYER
 	STA	player1Count
@@ -89,16 +98,14 @@ tmp_rightXpos		= tmp3
 
 	REP	#$30
 .A16
-	LDA	#cannons
+	LDA	#player1Cannons
 
 	REPEAT
 		TCD
 
 		SEP	#$20
 .A8
-		LDX	#CANNON_MIN_SPACING
-		LDY	#CANNON_MAX_SPACING
-		JSR	Random__Rnd_U16X_U16Y
+		STZ	z:CannonStruct::player
 
 		LDA	#1
 		STA	z:CannonStruct::alive
@@ -107,30 +114,16 @@ tmp_rightXpos		= tmp3
 		LDA	#CANNON_DEFAULT_POWER
 		STA	z:CannonStruct::power
 
-		LDA	tmp_player
-		STA	z:CannonStruct::player
-		IF_ZERO
-			INC
-			STA	tmp_player
+		LDX	#CANNON_MIN_SPACING
+		LDY	#CANNON_MAX_SPACING
+		JSR	Random__Rnd_U16X_U16Y
 
-			REP	#$20
+		REP	#$20
 .A16
-			TYA
-			ADD	tmp_leftXpos
-			STA	tmp_leftXpos
-			STA	z:CannonStruct::xPos
-		ELSE
-.A8
-			STZ	tmp_player
-
-			REP	#$20
-.A16
-			TYA
-			RSB16	tmp_rightXpos
-			STA	tmp_rightXpos
-			STA	z:CannonStruct::xPos
-		ENDIF
-.A16
+		TYA
+		ADD	tmp_xPos
+		STA	tmp_xPos
+		STA	z:CannonStruct::xPos
 
 		; A = xPos
 		JSR	Terrain__GetTopmostYposOfXpos
@@ -138,7 +131,47 @@ tmp_rightXpos		= tmp3
 
 		TDC
 		ADD	#.sizeof(CannonStruct)
-		CMP	#cannons_End
+		CMP	#player1Cannons_End
+	UNTIL_GE
+
+
+
+	LDX	#TERRAIN_WIDTH - CANNON_SPACE_TO_EDGE
+	STX	tmp_xPos
+
+	LDA	#player2Cannons
+
+	REPEAT
+		TCD
+
+		SEP	#$20
+.A8
+		LDA	#1
+		STA	z:CannonStruct::player
+		STA	z:CannonStruct::alive
+		LDA	#CANNON_DEFAULT_ANGLE
+		STA	z:CannonStruct::angle
+		LDA	#CANNON_DEFAULT_POWER
+		STA	z:CannonStruct::power
+
+		LDX	#CANNON_MIN_SPACING
+		LDY	#CANNON_MAX_SPACING
+		JSR	Random__Rnd_U16X_U16Y
+
+		REP	#$20
+.A16
+		TYA
+		RSB16	tmp_xPos
+		STA	tmp_xPos
+		STA	z:CannonStruct::xPos
+
+		; A = xPos
+		JSR	Terrain__GetTopmostYposOfXpos
+		STA	z:CannonStruct::yPos
+
+		TDC
+		ADD	#.sizeof(CannonStruct)
+		CMP	#player2Cannons_End
 	UNTIL_GE
 
 	SEP	#$20

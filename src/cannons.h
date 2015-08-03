@@ -57,6 +57,12 @@ IMPORT_MODULE Cannons
 	;; List of cannons in play
 	STRUCT	cannons, CannonStruct, CANNONS_PER_PLAYER * 2
 
+	STRUCT	player1Cannons, CannonStruct, CANNONS_PER_PLAYER
+	STRUCT	player2Cannons, CannonStruct, CANNONS_PER_PLAYER
+
+	LABEL	player1Cannons_End
+	LABEL	player2Cannons_End
+
 	;; Number of cannons player 1 has in play
 	BYTE	player1Count
 

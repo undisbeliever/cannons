@@ -22,7 +22,10 @@ MODULE Gameloop
 
 .segment "SHADOW"
 	WORD	state
-	WORD	selectedCannon
+	ADDR	selectedCannon
+
+	ADDR	selectedPlayer1Cannon
+	ADDR	selectedPlayer2Cannon
 
 	WORD	attract_timer
 
@@ -48,6 +51,13 @@ LABEL StateTable
 ROUTINE PlayGame
 	LDX	#GameState::ATTRACT_MODE
 	STX	state
+
+	LDX	#Cannons__player1Cannons
+	STX	selectedPlayer1Cannon
+
+	; select the last cannon, so the next one is player 2 number 1.
+	LDX	#Cannons__player2Cannons_End
+	STX	selectedPlayer2Cannon
 
 	REPEAT
 		JSR	Random__AddJoypadEntropy
@@ -345,8 +355,7 @@ ROUTINE Cannonball
 		CMP	#CannonBallState::HIT_GROUND
 		BEQ	TerrainExplodes
 
-		; ::TODO select next cannon::
-		JSR	ScrollToCannon
+		JMP	SelectNextCannon
 	ENDIF
 
 	RTS
@@ -422,6 +431,11 @@ ROUTINE	TerrainExplodes
 .A8
 .I16
 ROUTINE	Explosion
+	LDA	Ui__animationComplete
+	IF_NOT_ZERO
+		JMP	SelectNextCannon
+	ENDIF
+
 	RTS
 
 
@@ -432,6 +446,85 @@ ROUTINE	Explosion
 ROUTINE GameOver
 	RTS
 
+
+
+; DP = selectedCannon
+.A8
+.I16
+ROUTINE SelectNextCannon
+	; if dp->player != 0
+	;	repeat
+	;		selectedPlayer1Cannon++
+	;		if selectedPlayer1Cannon >= Cannons__player1Cannons_End
+	;			selectedPlayer1Cannon = Cannons__player1Cannons
+	;	until selectedPlayer1Cannon->alive
+	;
+	;	selectedCannon = selectedPlayer1Cannon
+	; else
+	;	repeat
+	;		selectedPlayer2Cannon++
+	;		if selectedPlayer2Cannon >= Cannons__player2Cannons_End
+	;			selectedPlayer2Cannon = Cannons__player2Cannons
+	;	until selectedPlayer2Cannon->alive
+	;
+	;	selectedCannon = selectedPlayer2Cannon
+	;
+	; state = GameState::SCROLL_TO_CANNON
+
+	REP	#$30
+	SEP	#$10
+.A16
+.I8
+
+	LDY	z:CannonStruct::player
+	IF_NOT_ZERO
+		; next player is player 1
+
+		LDA	selectedPlayer1Cannon
+		REPEAT
+			ADD	#.sizeof(CannonStruct)
+
+			CMP	#Cannons__player1Cannons_End
+			IF_GE
+				LDA	#Cannons__player1Cannons
+			ENDIF
+
+			TCD
+
+			LDY	z:CannonStruct::alive	
+		UNTIL_NOT_ZERO
+
+		STA	selectedPlayer1Cannon
+	ELSE
+		; next player is player 2
+
+		LDA	selectedPlayer2Cannon
+		REPEAT
+			ADD	#.sizeof(CannonStruct)
+
+			CMP	#Cannons__player2Cannons_End
+			IF_GE
+				LDA	#Cannons__player2Cannons
+			ENDIF
+
+			TCD
+
+			LDY	z:CannonStruct::alive	
+		UNTIL_NOT_ZERO
+
+		STA	selectedPlayer2Cannon
+	ENDIF
+
+	STA	selectedCannon
+
+	REP	#$30
+	SEP	#$20
+.A8
+.I16
+	LDX	#GameState::SCROLL_TO_CANNON
+	STX	state
+
+	RTS
 
 
 ENDMODULE
