@@ -79,6 +79,9 @@ POWER_NORMAL_PALETTE	= 0
 
 ANGLE_DEGREES_TILE	= $20
 
+PLAYER_WINS_XPOS	= (SCREEN_WIDTH - 11 * 8 - NUMBER_XSPACING * 3) / 2
+PLAYER_WINS_YPOS	= TEXT_YPOS
+
 
 .rodata
 LABEL	StateTable
@@ -295,6 +298,23 @@ ROUTINE	Explosion
 .A8
 .I16
 ROUTINE GameOver
+	LDX	#PLAYER_WINS_XPOS
+	STX	MetaSprite__xPos
+
+	LDX	#PLAYER_WINS_YPOS
+	STX	MetaSprite__yPos
+
+	LDY	#0
+
+	LDA	Cannons__player1Count
+	IF_ZERO
+		LDX	#.loword(Player2WinsMetaSprite)
+	ELSE
+		LDX	#.loword(Player1WinsMetaSprite)
+	ENDIF
+
+	JSR	MetaSprite__ProcessMetaSprite_Y
+
 	RTS
 
 
@@ -789,6 +809,44 @@ SmallExplosionAnimation:
 			.byte	$00	; small
 	.endrepeat
 
+
+.macro _PlayerWinsMetaSprite player
+	.byte 9
+		; Player
+		.repeat 3, i
+			.byte	i * 16
+			.byte	0
+			.word	$25 + i * 2 + TEXT_ORDER << OAM_CHARATTR_ORDER_SHIFT
+			.byte	$FF
+		.endrepeat
+		; #
+		.repeat 2, i
+			.byte	3 * 16 + NUMBER_XSPACING
+			.byte	i * NUMBER_BOTTOM_YOFFSET
+			.word	NUMBER_TILE_OFFSET + player + NUMBER_BOTTOM_OFFSET * i + TEXT_ORDER << OAM_CHARATTR_ORDER_SHIFT
+			.byte	0
+		.endrepeat
+		; Wins
+		.repeat 2, i
+			.byte	3 * 16 + NUMBER_XSPACING * 3 + i * 16
+			.byte	0
+			.word	$2B + i * 2 + TEXT_ORDER << OAM_CHARATTR_ORDER_SHIFT
+			.byte	$FF
+		.endrepeat
+		; !
+		.repeat 2, i
+			.byte	5 * 16 + NUMBER_XSPACING * 3
+			.byte	8 * i
+			.word	$2F + i * 16 + TEXT_ORDER << OAM_CHARATTR_ORDER_SHIFT
+			.byte	0
+		.endrepeat
+.endmacro
+
+Player1WinsMetaSprite:
+	_PlayerWinsMetaSprite 1
+
+Player2WinsMetaSprite:
+	_PlayerWinsMetaSprite 2
 
 ENDMODULE
 

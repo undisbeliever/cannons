@@ -17,6 +17,9 @@
 ;; Number of frames before respawning the game
 CONFIG	ATTARACT_MODE_RESPAWN_FRAME_DELAY, 5 * FPS
 
+;; Number of frames to wait for game over message
+CONFIG	GAME_OVER_FRAME_DELAY, 10 * FPS
+
 
 MODULE Gameloop
 
@@ -392,16 +395,10 @@ ROUTINE	CannonExplodes
 	JSR	Cannons__MarkCannonDead
 
 	LDA	Cannons__player1Count
-	BEQ	_CannonExplodes_GameOver
+	BEQ	SetGameOver
 
 	LDA	Cannons__player2Count
-	IF_ZERO
-_CannonExplodes_GameOver:
-		LDX	#GameState::GAME_OVER
-		STX	state
-
-		RTS
-	ENDIF
+	BEQ	SetGameOver
 
 	LDX	#GameState::EXPLOSION
 	STX	state
@@ -439,11 +436,42 @@ ROUTINE	Explosion
 	RTS
 
 
+.A8
+.I16
+ROUTINE SetGameOver
+	LDX	#GameState::GAME_OVER
+	STX	state
+
+	LDX	#GAME_OVER_FRAME_DELAY
+	STX	attract_timer
+
+	RTS
+
+
 
 ; DP = selectedCannon
 .A8
 .I16
 ROUTINE GameOver
+	; attract_timer--;
+	; if attract_timer < 0:
+	;	SetAttractMode();
+	;
+	; else if Controller__pressed & JOYH_START
+	;	StartGame
+
+	LDX	attract_timer
+	DEX
+	STX	attract_timer
+	IF_MINUS
+		JSR	SetAttractMode
+	ENDIF
+
+	LDA	Controller__pressed + 1
+	IF_BIT	#JOYH_START
+		JMP	StartGame
+	ENDIF
+
 	RTS
 
 
