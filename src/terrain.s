@@ -70,6 +70,10 @@ CONFIG	TERRAIN_END_MAX, HEIGHT - TERRAIN_END_MIN
 
 	STRUCT	hdmaTmTable, HdmaTmTableStruct, 3
 	BYTE	endHdmaTmTable
+
+
+	;; If 0, there is no update, else update the tiles next to it.
+	ADDR	bufferLocationToUpdate
 .code
 
 
@@ -80,8 +84,7 @@ ROUTINE Generate
 
 	REP	#$20
 .A16
-	; ::TODO setColor macro::
-	LDA	#$0000
+	LDA	#PIXELBUFFER_COLOR0
 	STA	f:PixelBuffer__colorBits
 	JSR	PixelBuffer__FillBuffer
 
@@ -97,6 +100,10 @@ ROUTINE Generate
 .A8
 .I16
 ROUTINE CopyToVram
+
+	LDX	#0
+	STX	bufferLocationToUpdate
+
 	; Prevent screen tearing
 	JSR	Screen__WaitFrame
 
@@ -128,6 +135,26 @@ ROUTINE VBlank
 	SEP	#$10
 .A16
 .I8
+
+	LDA	bufferLocationToUpdate
+	IF_NOT_ZERO
+		; update buffer
+		SUB	#16
+		JSR	VBlank_CopyRow
+
+		LDA	bufferLocationToUpdate
+		ADD	#PIXELBUFFER_WIDTH * 16 - 16
+		JSR	VBlank_CopyRow
+
+		LDA	bufferLocationToUpdate
+		SUB	#PIXELBUFFER_WIDTH * 16 + 16
+		JSR	VBlank_CopyRow
+
+		STZ	bufferLocationToUpdate
+	ENDIF
+
+
+
 	LDA	hOffset
 	IF_MINUS
 		STZ	hOffset
@@ -300,6 +327,39 @@ ROUTINE VBlank
 	RTS
 
 
+
+.A16
+.I8
+ROUTINE VBlank_CopyRow
+
+	LDY	#VMAIN_INCREMENT_HIGH | VMAIN_INCREMENT_1
+	STY	VMAIN
+
+	PHA
+	LSR
+	ADD	#CANNONS_BG1_TILES
+	STA	VMADD
+
+	LDA	#DMAP_DIRECTION_TO_PPU | DMAP_TRANSFER_2REGS | (.lobyte(VMDATA) << 8)
+	STA	DMAP0
+
+	LDY	#.bankbyte(PixelBuffer__buffer)
+	STY	A1B0
+
+	PLA
+	ADD	#.loword(PixelBuffer__buffer)
+	STA	A1T0
+
+	LDA	#16 * 3
+	STA	DAS0
+
+	LDY	#MDMAEN_DMA0
+	STY	MDMAEN
+
+	RTS
+
+
+
 ; IN: X = xPos, Y = yPos
 ROUTINE CenterOnPosition
 	PHP
@@ -400,14 +460,135 @@ _IsPixelOccupied_OffScreen:
 
 
 
+; IN: X/Y = pixel position
+; IN: A = player
+.A8
+.I16
+ROUTINE DrawCreator
+	; if x < 1:
+	;	x = 1
+	; if x > TERRAIN_WIDTH - 1:
+	;	x = TERRAIN_WIDTH - 1
+	; if y < 1:
+	;	y = 1
+	; if y > TERRAIN_HEIGHT - 2:
+	;	y = TERRAIN_HEIGHT - 2
+	;
+	; PixelBuffer__colorBits = 0
+	; PixelBuffer__SetPixel(x, y - 1)
+	; PixelBuffer__SetPixel(x - 1, y)
+	; PixelBuffer__SetPixel(x, y)
+	; PixelBuffer__SetPixel(x + 1, y)
+	;
+	; if player == 0:
+	;	PixelBuffer__colorBits = PIXELBUFFER_COLOR2
+	; else:
+	;	PixelBuffer__colorBits = PIXELBUFFER_COLOR3
+	;
+	; PixelBuffer__colorBits(x, y + 1)
+
+tmp_cannonBall	= tmp1
+tmp_x		= tmp2
+tmp_y		= tmp3
+
+	PEA	.bankbyte(*) << 8 | PixelBuffer__bufferBank
+	PLB
+
+	CPX	#1
+	IF_SLT
+		LDX	#1
+	ENDIF
+
+	CPX	#TERRAIN_WIDTH + 2
+	IF_SGE
+		LDX	#TERRAIN_WIDTH - 1
+	ENDIF
+
+	STX	tmp_x
+
+
+	CPY	#1
+	IF_SLT
+		LDY	#1
+	ENDIF
+
+	CPY	#TERRAIN_HEIGHT + 2
+	IF_SGE
+		LDY	#TERRAIN_HEIGHT - 1
+	ENDIF
+	STY	tmp_y
+
+
+
+	CMP	#0
+	IF_EQ
+		.assert RED = 2, error, "Bad assumption"
+		LDY	#PIXELBUFFER_COLOR2
+	ELSE
+		.assert BLUE = 3, error, "Bad assumption"
+		LDY	#PIXELBUFFER_COLOR3
+	ENDIF
+
+	STY	tmp_cannonBall
+
+
+	REP	#$30
+.A16
+	; Draw creator
+	LDA	#0
+	STA	PixelBuffer__colorBits
+
+	LDX	tmp_x
+	LDY	tmp_y
+	DEY
+	JSR	PixelBuffer__SetPixel
+
+	LDX	tmp_x
+	DEX
+	LDY	tmp_y
+	JSR	PixelBuffer__SetPixel
+
+	LDX	tmp_x
+	LDY	tmp_y
+	JSR	PixelBuffer__SetPixel
+
+	LDX	tmp_x
+	INX
+	LDY	tmp_y
+	JSR	PixelBuffer__SetPixel
+
+
+	; Draw cannonball
+	LDA	tmp_cannonBall
+	STA	PixelBuffer__colorBits
+
+	LDA	tmp_cannonBall
+	LDX	tmp_x
+	LDY	tmp_y
+	INY
+	JSR	PixelBuffer__SetPixel
+
+
+	LDX	tmp_x
+	LDY	tmp_y
+	JSR	PixelBuffer__TileOffsetForPosition
+	STX	bufferLocationToUpdate
+
+	SEP	#$20
+.A8
+
+	PLB
+	RTS
+
+
+
 .A16
 .I16
 ROUTINE RenderBuffer
 	PEA	.bankbyte(*) << 8 | PixelBuffer__bufferBank
 	PLB
 
-	; ::TODO setColor macro::
-	LDA	#$00FF
+	LDA	#PIXELBUFFER_COLOR1
 	STA	PixelBuffer__colorBits
 
 	LDX	#WIDTH - 1

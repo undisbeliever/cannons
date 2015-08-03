@@ -407,11 +407,17 @@ ROUTINE	CannonExplodes
 
 
 
+; DP = selectedCannon
 .A8
 .I16
 ROUTINE	TerrainExplodes
 	; Ui__StartExplosionAnimation(cannonBall.xPos, cannonBall.yPos)
 	; state = GameState::EXPLOSION
+
+	LDX	CannonBall__xPos + 2
+	LDY	CannonBall__yPos + 2
+	LDA	z:CannonStruct::player
+	JSR	Terrain__DrawCreator
 
 	LDX	CannonBall__xPos + 2
 	LDY	CannonBall__yPos + 2

@@ -49,6 +49,14 @@ IMPORT_MODULE Terrain
 	;; OUTPUT: c clear if pixel is sky, else set
 	ROUTINE IsPixelOccupied
 
+	;; Draws a creator in the given location
+	;; REQUIRES: 8 bit A, 16 bit Index, DB = $80
+	;;
+	;; INPUT:
+	;;	X/Y - position
+	;;	A - player that created the creator
+	ROUTINE DrawCreator
+
 ENDMODULE
 
 .endif ; __TERRAIN_H_
