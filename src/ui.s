@@ -50,6 +50,18 @@ FLAG_XPOS		= 24
 FLAG_YPOS		= 24
 FLAG_XSPACING		= 8
 
+N_EXPLOSION_FRAMES	= 8
+ANIMATION_FRAME_DELAY	= 2
+
+EXPLOSION_SPRITE	= $60
+EXPLOSION_XOFFSET	= -8
+EXPLOSION_YOFFSET	= -8
+
+SMALL_EXPLOSION_SPRITE	= $80
+SMALL_EXPLOSION_XOFFSET	= -4
+SMALL_EXPLOSION_YOFFSET	= -4
+
+
 TEXT_YPOS		= FLAG_YPOS - 3
 
 PRESS_START_XPOS	= (SCREEN_WIDTH - 12 * 8) / 2
@@ -80,6 +92,12 @@ LABEL	StateTable
 
 
 .segment "SHADOW"
+	BYTE	animationComplete
+	WORD	animation_xPos
+	WORD	animation_yPos
+	ADDR	animation_framePtr
+	BYTE	animation_framesLeft
+	BYTE	animation_frameDelay
 
 	WORD	tmp1
 	WORD	tmp2
@@ -95,7 +113,54 @@ ROUTINE Init
 	TransferToVramLocation	Resources__Sprites_Tiles,	CANNONS_OAM_TILES
 	TransferToCgramLocation	Resources__Sprites_Palette,	128
 
+	LDX	#0
+	STX	animation_framePtr
+
 	MetaSprite_Init
+
+	RTS
+
+
+
+; IN: X/Y = position
+.A8
+.I16
+ROUTINE	StartSmallExplosionAnimation
+	STX	animation_xPos
+	STY	animation_yPos
+
+	LDX	#.loword(SmallExplosionAnimation)
+	STX	animation_framePtr
+
+	LDA	#N_EXPLOSION_FRAMES
+	STA	animation_framesLeft
+
+	LDA	#ANIMATION_FRAME_DELAY
+	STA	animation_frameDelay
+
+	STZ	animationComplete
+
+	RTS
+
+
+
+; IN: X/Y = position
+.A8
+.I16
+ROUTINE	StartExplosionAnimation
+	STX	animation_xPos
+	STY	animation_yPos
+
+	LDX	#.loword(ExplosionAnimation)
+	STX	animation_framePtr
+
+	LDA	#N_EXPLOSION_FRAMES
+	STA	animation_framesLeft
+
+	LDA	#ANIMATION_FRAME_DELAY
+	STA	animation_frameDelay
+
+	STZ	animationComplete
 
 	RTS
 
@@ -119,6 +184,8 @@ ROUTINE Update
 
 	LDX	Gameloop__state
 	JSR	(.loword(StateTable), X)
+
+	JSR	ProcessAnimation
 
 	JMP	MetaSprite__FinalizeLoop
 
@@ -228,6 +295,59 @@ ROUTINE	Explosion
 .A8
 .I16
 ROUTINE GameOver
+	RTS
+
+
+
+;; Process the animation.
+.A8
+.I16
+ROUTINE ProcessAnimation
+	LDX	animation_framePtr
+	IF_NOT_ZERO
+
+		REP	#$30
+.A16
+		LDA	animation_xPos
+		SUB	Terrain__hOffset
+		STA	MetaSprite__xPos
+
+
+		LDA	animation_yPos
+		SUB	Terrain__vOffset
+		STA	MetaSprite__yPos
+
+
+		LDA	f:MetaSpriteLayoutBank << 16, X
+		TAX
+
+		SEP	#$20
+.A8
+
+		LDY	#0
+		JSR	MetaSprite__ProcessMetaSprite_Y
+
+
+		DEC	animation_frameDelay
+		IF_ZERO
+			DEC	animation_framesLeft
+			IF_ZERO
+				LDA	#1
+				STA	animationComplete
+
+				LDX	#0
+			ELSE
+				LDX	animation_framePtr
+				INX
+				INX
+			ENDIF
+			STX	animation_framePtr
+
+			LDA	#ANIMATION_FRAME_DELAY
+			STA	animation_frameDelay
+		ENDIF
+	ENDIF
+
 	RTS
 
 
@@ -636,6 +756,39 @@ PowerMetaSprite:
 		.word	$21 + i * 2
 		.byte	$FF
 	.endrepeat
+
+
+ExplosionAnimation:
+	.repeat	N_EXPLOSION_FRAMES, i
+		.addr	.ident(.sprintf("ExplosionFrame%d", i))
+	.endrepeat
+
+
+	.repeat	N_EXPLOSION_FRAMES, i
+		.ident(.sprintf("ExplosionFrame%d", i)):
+			.byte	1
+			.byte	.lobyte(EXPLOSION_XOFFSET)
+			.byte	.lobyte(EXPLOSION_YOFFSET)
+			.word	EXPLOSION_SPRITE + 2 * i + EXPLOSIONS_SPRITE_ORDER << OAM_CHARATTR_ORDER_SHIFT
+			.byte	$FF	; large
+	.endrepeat
+
+
+SmallExplosionAnimation:
+	.repeat	N_EXPLOSION_FRAMES, i
+		.addr	.ident(.sprintf("SmallExplosionFrame%d", i))
+	.endrepeat
+
+
+	.repeat	N_EXPLOSION_FRAMES, i
+		.ident(.sprintf("SmallExplosionFrame%d", i)):
+			.byte	1
+			.byte	.lobyte(SMALL_EXPLOSION_XOFFSET)
+			.byte	.lobyte(SMALL_EXPLOSION_YOFFSET)
+			.word	SMALL_EXPLOSION_SPRITE + 2 * i + EXPLOSIONS_SPRITE_ORDER << OAM_CHARATTR_ORDER_SHIFT
+			.byte	$00	; small
+	.endrepeat
+
 
 ENDMODULE
 

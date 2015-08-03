@@ -321,6 +321,16 @@ ROUTINE FireCannon
 .A8
 .I16
 ROUTINE Cannonball
+	; a = CannonBall__Update
+	;
+	; if a != 0:
+	;	if a == CannonBallState::HIT_CANNNON:
+	;		return CannonExplodes()
+	;	else if a == CannonBallState::HIT_GROUND:
+	;		return TerrainExplodes()
+	;	else:
+	;		return ScrollToCannon()
+
 	REP	#$30
 .A16
 	JSR	CannonBall__Update
@@ -330,10 +340,10 @@ ROUTINE Cannonball
 
 	IF_NOT_ZERO
 		CMP	#CannonBallState::HIT_CANNON
-		IF_EQ
-			; X = cannon
-			JMP	CannonExplodes
-		ENDIF
+		BEQ	CannonExplodes
+
+		CMP	#CannonBallState::HIT_GROUND
+		BEQ	TerrainExplodes
 
 		; ::TODO select next cannon::
 		JSR	ScrollToCannon
@@ -346,9 +356,60 @@ ROUTINE Cannonball
 .A8
 .I16
 ROUTINE	CannonExplodes
-	; ::TODO explode cannon::
+	; Ui__StartExplosionAnimation(cannon->xPos, cannon->yPos)
+	; Cannons__MarkCannonDead(cannon)
+	;
+	; if Cannons__player1Count == 0 || Cannons__player2Count == 0:
+	;	state = GameState::GAME_OVER
+	; else
+	;	state = GameState::EXPLOSION
 
+	PHX
+
+	REP	#$30
+.A16
+	LDA	a:CannonStruct::yPos, X
+	TAY
+
+	LDA	a:CannonStruct::xPos, X
+	TAX
+
+	SEP	#$20
+.A8
+	JSR	Ui__StartExplosionAnimation
+
+
+	PLX
 	JSR	Cannons__MarkCannonDead
+
+	LDA	Cannons__player1Count
+	BEQ	_CannonExplodes_GameOver
+
+	LDA	Cannons__player2Count
+	IF_ZERO
+_CannonExplodes_GameOver:
+		LDX	#GameState::GAME_OVER
+		STX	state
+
+		RTS
+	ENDIF
+
+	LDX	#GameState::EXPLOSION
+	STX	state
+
+	RTS
+
+
+
+.A8
+.I16
+ROUTINE	TerrainExplodes
+	; Ui__StartExplosionAnimation(cannonBall.xPos, cannonBall.yPos)
+	; state = GameState::EXPLOSION
+
+	LDX	CannonBall__cannonBall + CannonBallStruct::xPos + 2
+	LDY	CannonBall__cannonBall + CannonBallStruct::yPos + 2
+	JSR	Ui__StartSmallExplosionAnimation
 
 	LDX	#GameState::EXPLOSION
 	STX	state
