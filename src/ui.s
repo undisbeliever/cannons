@@ -21,7 +21,7 @@ SCREEN_WIDTH		= 256
 SCREEN_HEIGHT		= 224
 
 CANNON_AIM_COUNT	= 3
-CANNON_AIM_MULTIPLIER   = 2
+CANNON_AIM_MULTIPLIER   = 2 * SUBFRAMES
 CANNON_AIM_TILE		= 16
 
 CANNON_SPRITE_ORDER	= 2	; in front of BG1-BG4, behind explosions
@@ -456,11 +456,13 @@ tmp_yFractional = tmp3
 	
 	REP	#$30
 .A16
-	.assert CANNON_AIM_MULTIPLIER = 2, error, "Bad Code"
-	ASL	CannonBall__cannonBall + CannonBallStruct::xVecl
-	ROL	CannonBall__cannonBall + CannonBallStruct::xVecl + 2
-	ASL	CannonBall__cannonBall + CannonBallStruct::yVecl
-	ROL	CannonBall__cannonBall + CannonBallStruct::yVecl + 2
+	.assert CANNON_AIM_MULTIPLIER = 16, error, "Bad Code"
+	.repeat 4
+		ASL	CannonBall__cannonBall + CannonBallStruct::xVecl
+		ROL	CannonBall__cannonBall + CannonBallStruct::xVecl + 2
+		ASL	CannonBall__cannonBall + CannonBallStruct::yVecl
+		ROL	CannonBall__cannonBall + CannonBallStruct::yVecl + 2
+	.endrepeat
 
 	LDA	#CANNON_AIM_TILE + CANNON_AIM_SPRITE_ORDER << OAM_CHARATTR_ORDER_SHIFT
 	STA	MetaSprite__charAttr

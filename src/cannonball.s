@@ -19,7 +19,7 @@ MODULE CannonBall
 
 	WORD	tmp1
 	WORD	tmp2
-
+	WORD	tmp_subframeCounter
 
 .code
 
@@ -83,12 +83,9 @@ tmp_convertedPow = tmp2
 	LDA	f:SineTable, X
 	TAX
 
-	; power = 0:3:5 - convert to 1:9:9
+	; power = 0:0:8 - convert to 1:9:9
 	LDA	z:CannonStruct::power
 	AND	#$FF
-	ASL
-	ASL
-	ASL
 	ASL
 	STA	tmp_convertedPow
 
@@ -164,6 +161,33 @@ tmp_convertedPow = tmp2
 .A16
 .I16
 ROUTINE Update
+	; for i = SUBFRAMES to 0:
+	;	r, X = UpdateSubframe()
+	;	if r != #CannonBallState::FLYING
+	;		return r, X
+
+	LDA	#SUBFRAMES
+	STA	tmp_subframeCounter
+	REPEAT
+		JSR	UpdateSubframe
+
+		.assert CannonBallState::FLYING = 0, error, "Bad assumption"
+
+		IF_NOT_ZERO
+			RTS
+		ENDIF
+
+		DEC	tmp_subframeCounter
+	UNTIL_ZERO
+
+	LDA	#CannonBallState::FLYING
+	RTS
+
+
+
+.A16
+.I16
+ROUTINE UpdateSubframe
 	; cannonBall.xPos += cannonBall.xVecl
 	; cannonBall.yPos += cannonBall.yVecl
 	;

@@ -7,9 +7,13 @@
 .include "includes/registers.inc"
 .include "includes/config.inc"
 
+;; Number of times to calculate physics per frame.
+CONFIG SUBFRAMES, 8
+
 ;; Gravity of the cannonball.
 ;; 1:15:16 fixed point
-CONFIG CANNONBALL_GRAVITY, $10000 * 5 / 100	; 0.05 pixels/frame^2
+CONFIG CANNONBALL_GRAVITY, $10000 * 5 / 100 / SUBFRAMES / SUBFRAMES	; 0.05 pixels/frame^2
+
 
 .struct CannonBallStruct
 	;; Cannonball's xPos
@@ -56,6 +60,7 @@ IMPORT_MODULE CannonBall
 
 
 	;; Processes a single frame of a cannonball.
+	;; A single frame is made up of `SUBFRAMES` sub frames.
 	;;
 	;; REQUIRE: 16 bit A, 16 bit Index, DP access shadow
 	;;

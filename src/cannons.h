@@ -39,8 +39,8 @@ CANNON_MAX_POWER = 200
 	;; Values are 0 to 180.
 	angle	.byte
 
-	;; The current power of the cannon
-	;; 0:3:5 fixed point integer
+	;; The current power of the cannon (velocity/subframe)
+	;; 0:0:8 fixed point integer
 	power	.byte
 
 	;; The cannon's x Position on the map
