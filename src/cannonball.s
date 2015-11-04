@@ -220,7 +220,7 @@ ROUTINE UpdateSubframe
 
 	BMI	Update_OutOfBounds
 	CMP	#TERRAIN_WIDTH
-	BSGE	Update_OutOfBounds
+	BPL	Update_OutOfBounds
 
 
 	CLC
@@ -232,7 +232,7 @@ ROUTINE UpdateSubframe
 	STA	yPos + 2
 
 	CMP	#TERRAIN_HEIGHT
-	IF_SGE
+	IF_PLUS
 Update_OutOfBounds:
 		LDA	#CannonBallState::OUT_OF_BOUNDS
 		RTS

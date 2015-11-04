@@ -168,7 +168,7 @@ ROUTINE VBlank
 
 	LDA	vOffset
 	CMP	#HEIGHT - SCREEN_HEIGHT
-	IF_SGE
+	IF_PLUS
 		LDA	#HEIGHT - SCREEN_HEIGHT - 1
 		STA	vOffset
 	ENDIF
@@ -216,7 +216,7 @@ ROUTINE VBlank
 	LDA	vOffset
 	IF_MINUS
 		CMP	#.loword(-128)
-		IF_SLT
+		IF_MINUS
 			; ::BUGFIX HDMA nScanlines must be < 128::
 			NEG16
 			AND	#$7F
@@ -385,7 +385,7 @@ ROUTINE CenterOnPosition
 	TYA
 	SUB	#SCREEN_HEIGHT / 2
 	CMP	#HEIGHT - SCREEN_HEIGHT
-	IF_SGE
+	IF_PLUS
 		LDA	#HEIGHT - SCREEN_HEIGHT - 1
 		STA	vOffset
 	ENDIF
@@ -430,16 +430,16 @@ ROUTINE IsPixelOccupied
 	; Bounds checking
 
 	CPX	#0
-	BSLT	_IsPixelOccupied_OffScreen
+	BMI	_IsPixelOccupied_OffScreen
 
 	CPX	#TERRAIN_WIDTH
-	BSGE	_IsPixelOccupied_OffScreen
+	BPL	_IsPixelOccupied_OffScreen
 
 	CPY	#0
-	BSLT	_IsPixelOccupied_OffScreen
+	BMI	_IsPixelOccupied_OffScreen
 
 	CPY	#TERRAIN_HEIGHT
-	IF_SGE
+	IF_PLUS
 _IsPixelOccupied_OffScreen:
 		CLC
 		RTS
@@ -495,12 +495,12 @@ tmp_y		= tmp3
 	PLB
 
 	CPX	#1
-	IF_SLT
+	IF_MINUS
 		LDX	#1
 	ENDIF
 
 	CPX	#TERRAIN_WIDTH + 2
-	IF_SGE
+	IF_PLUS
 		LDX	#TERRAIN_WIDTH - 1
 	ENDIF
 
@@ -508,12 +508,12 @@ tmp_y		= tmp3
 
 
 	CPY	#1
-	IF_SLT
+	IF_MINUS
 		LDY	#1
 	ENDIF
 
 	CPY	#TERRAIN_HEIGHT + 2
-	IF_SGE
+	IF_PLUS
 		LDY	#TERRAIN_HEIGHT - 1
 	ENDIF
 	STY	tmp_y

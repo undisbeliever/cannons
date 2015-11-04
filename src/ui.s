@@ -413,9 +413,9 @@ ROUTINE DrawCannons
 		SUB	Terrain__hOffset
 
 		CMP	#SCREEN_WIDTH + CANNON_WIDTH
-		BSGE	_DrawCannons_Continue
+		BPL	_DrawCannons_Continue
 		CMP	#.loword(-CANNON_WIDTH)
-		BSLT	_DrawCannons_Continue
+		BMI	_DrawCannons_Continue
 
 		STA	MetaSprite__xPos
 
@@ -427,9 +427,9 @@ ROUTINE DrawCannons
 		SUB	Terrain__vOffset
 
 		CMP	#SCREEN_HEIGHT + CANNON_HEIGHT
-		BSGE	_DrawCannons_Continue
+		BPL	_DrawCannons_Continue
 		CMP	#.loword(-CANNON_HEIGHT)
-		BSLT	_DrawCannons_Continue
+		BMI	_DrawCannons_Continue
 
 		STA	MetaSprite__yPos
 
