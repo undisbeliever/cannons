@@ -30,7 +30,6 @@ This game is released under the MIT license.
 
 Build Requirements
 ===================
- * snesdev-common
  * ca65
  * pcx2snes
  * gnu Make
