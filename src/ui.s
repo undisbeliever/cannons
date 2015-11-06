@@ -411,30 +411,32 @@ ROUTINE DrawCannons
 		LDA	z:CannonStruct::xPos
 		DEC
 		SUB	Terrain__hOffset
-
-		CMP	#SCREEN_WIDTH + CANNON_WIDTH
-		BPL	_DrawCannons_Continue
-		CMP	#.loword(-CANNON_WIDTH)
-		BMI	_DrawCannons_Continue
-
 		STA	MetaSprite__xPos
 
+		SUB	#SCREEN_WIDTH + CANNON_WIDTH
+		BVS	_DrawCannons_Continue
+		BPL	_DrawCannons_Continue
+
+		LDA	MetaSprite__xPos
+		SUB	#.loword(-CANNON_WIDTH + 2)
+		BVS	_DrawCannons_Continue
+		BMI	_DrawCannons_Continue
 
 		.assert CANNON_YOFFSET = -2, error, "bad value"
 		LDA	z:CannonStruct::yPos
 		DEC
 		DEC
 		SUB	Terrain__vOffset
-
-		CMP	#SCREEN_HEIGHT + CANNON_HEIGHT
-		BPL	_DrawCannons_Continue
-		CMP	#.loword(-CANNON_HEIGHT)
-		BMI	_DrawCannons_Continue
-
 		STA	MetaSprite__yPos
 
-		LDX	MetaSprite__xPos
-		LDY	MetaSprite__yPos
+		SUB	#SCREEN_HEIGHT + CANNON_HEIGHT
+		BVS	_DrawCannons_Continue
+		BPL	_DrawCannons_Continue
+
+		LDA	MetaSprite__yPos
+		SUB	#.loword(-CANNON_WIDTH + 2)
+		BVS	_DrawCannons_Continue
+		BMI	_DrawCannons_Continue
 
 		LDA	z:CannonStruct::player
 		IF_NOT_BIT #$FF
@@ -655,7 +657,7 @@ tmp_yFractional = tmp3
 		ADC	CannonBall__yVecl + 2
 		STA	MetaSprite__yPos
 
-		SEP	#$30
+		SEP	#$20
 .A8
 		JSR	MetaSprite__ProcessSprite
 
