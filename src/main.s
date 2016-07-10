@@ -24,7 +24,7 @@ ROUTINE Main
 	STA	NMITIMEN
 
 	LDXY	#$753fd14d		; source: random.org
-	STXY	Random__Seed
+	STXY	Random__seed
 
 	LDA	#MEMSEL_FASTROM
 	STA	MEMSEL
