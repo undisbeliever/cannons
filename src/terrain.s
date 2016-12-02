@@ -404,8 +404,6 @@ ROUTINE CenterOnPosition
 ROUTINE GetTopmostYposOfXpos
 	; Just uses the terrainXposTable to get the yPos to save a lot of CPU time.
 
-	; ::MAYDO use PixelBuffer__GetPixel instead if terrainXposTable is dirty ::
-
 	ASL
 	TAX
 
@@ -660,8 +658,6 @@ ROUTINE GenerateTerrainTable
 	;
 	;	dx /= 2
 	; until dx < 2
-
-	;; ::MAYDO make displacement and roughness user configurable?::
 
 tmp_dx		= tmp1
 tmp_center	= tmp2

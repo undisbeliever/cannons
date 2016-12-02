@@ -104,7 +104,6 @@ ROUTINE	AttractMode
 	DEX
 	IF_MINUS
 		; ::BUGFIX cannot press start when generating terrain::
-		; ::SHOULDDO save state and allow exit by checking for start during VBlank?::
 		LDA	#INIDISP_FORCE
 		STA	INIDISP
 
@@ -191,7 +190,6 @@ ROUTINE	StartGame
 .A8
 .I16
 ROUTINE ScrollToCannon
-	; ::TODO slowly scroll to position::
 	LDX	z:CannonStruct::xPos
 	LDY	z:CannonStruct::yPos
 	JSR	Terrain__CenterOnPosition
@@ -207,7 +205,6 @@ ROUTINE ScrollToCannon
 .A8
 .I16
 ROUTINE SelectAngle
-	; ::TODO get player 2 controller if player2::
 	LDA	Controller__pressed + 1
 
 	IF_BIT #JOYH_B
@@ -259,7 +256,6 @@ ROUTINE SelectAngle
 .A8
 .I16
 ROUTINE SelectPower
-	; ::TODO get player 2 controller if player2::
 	LDA	Controller__pressed
 
 	IF_BIT #JOYL_A
@@ -269,7 +265,6 @@ ROUTINE SelectPower
 		RTS
 	ENDIF
 
-	; ::TODO get player 2 controller if player2::
 	LDA	Controller__pressed + 1
 
 	IF_BIT #JOYH_B
