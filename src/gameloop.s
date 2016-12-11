@@ -320,8 +320,6 @@ ROUTINE FireCannon
 	LDX	#GameState::CANNONBALL
 	STX	state
 
-	; ::SOUND fire cannon::
-
 	RTS
 
 
