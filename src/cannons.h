@@ -80,15 +80,15 @@ IMPORT_MODULE Cannons
 	;;
 	;; INPUT: X/Y the position
 	;; OUTPUT:
-	;;	X the address of the cannon, 0 if no collision occurred.
+	;;	X - the address of the cannon, 0 if no collision occurred.
 	ROUTINE CheckCollision
 
 
 	;; Marks the cannon as dead
 	;; REQUIRES: 8 bit A, 16 bit Index, DB access shadow
 	;;
-	;; INPUT: X the address of the cannon
-	;; OUTPUT: A the number of cannons the player has left
+	;; INPUT: X - the address of the cannon
+	;; OUTPUT: A - the number of cannons the player has left
 	ROUTINE MarkCannonDead
 
 ENDMODULE

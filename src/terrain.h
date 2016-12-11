@@ -22,7 +22,7 @@ IMPORT_MODULE Terrain
 	;; REQUIRES: 8 bit A, 16 bit Index, DB = $80
 	ROUTINE Generate
 
-	;; Sets up the display and copies the entrire terrain to VBlank.
+	;; Sets up the display and copies the entries terrain to VBlank.
 	;; REQUIRES: 8 bit A, 16 bit Index, DB access registers.
 	;;
 	;; NOTE: will force blank to load tiles into VRAM
@@ -36,7 +36,7 @@ IMPORT_MODULE Terrain
 	;; REQUIRES: 16 bit Index, DB access shadow
 	ROUTINE	CenterOnPosition
 
-	;; Returns the the yPos of the top of the terrain for a given xPos  
+	;; Returns the yPos of the top of the terrain for a given xPos  
 	;; REQUIRES: 16 bit A, 16 bit Index, DB access shadow
 	;;
 	;; INPUT: A = xPos

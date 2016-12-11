@@ -696,7 +696,7 @@ ROUTINE SetPlayerTextColor
 
 ; MetaSprite__xPos = xPos
 ; MetaSprite__yPos = yPos
-; Y = palete
+; Y = palette
 ; A = number
 ; OUT: MetaSprite__xPos = end of text
 .A8

@@ -14,7 +14,7 @@
 .include "cannons.h"
 .include "ui.h"
 
-;; Number of frames before respawning the game
+;; Number of frames before re-spawning the new terrain
 CONFIG	ATTARACT_MODE_RESPAWN_FRAME_DELAY, 5 * FPS
 
 ;; Number of frames to wait for game over message

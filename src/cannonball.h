@@ -60,7 +60,7 @@ IMPORT_MODULE CannonBall
 	;;
 	;; REQUIRE: 16 bit A, 16 bit Index, DP access shadow
 	;;
-	;; RETURN: Cannonstate enum determing state of cannon
+	;; RETURN: A = state of the cannonball (`CannonBallState`)
 	;;	X - address of cannon if hit by cannonball, else 0
 	;;	Zero flag set if not hit by anything
 	ROUTINE Update
