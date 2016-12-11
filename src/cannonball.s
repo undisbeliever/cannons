@@ -20,7 +20,7 @@ MODULE CannonBall
 
 	UINT32	xVecl
 	UINT32	yVecl
-	
+
 
 	WORD	tmp1
 	WORD	tmp2

@@ -518,7 +518,7 @@ ROUTINE SelectNextCannon
 
 			TCD
 
-			LDY	z:CannonStruct::alive	
+			LDY	z:CannonStruct::alive
 		UNTIL_NOT_ZERO
 
 		STA	selectedPlayer1Cannon
@@ -536,7 +536,7 @@ ROUTINE SelectNextCannon
 
 			TCD
 
-			LDY	z:CannonStruct::alive	
+			LDY	z:CannonStruct::alive
 		UNTIL_NOT_ZERO
 
 		STA	selectedPlayer2Cannon

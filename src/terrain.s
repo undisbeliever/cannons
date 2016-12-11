@@ -232,13 +232,13 @@ ROUTINE VBlank
 
 			LDX	#BG_DISPLAY_HEIGHT
 			STX	hdmaTmTable + .sizeof(HdmaTmTableStruct) * 2 + HdmaTmTableStruct::nScanlines
-			
+
 			LDX	#TM_BG1 | TM_OBJ
 			STX	hdmaTmTable + .sizeof(HdmaTmTableStruct) * 2 + HdmaTmTableStruct::tm
 
 			LDX	#0
 			STX	hdmaTmTable + .sizeof(HdmaTmTableStruct) * 3 + HdmaTmTableStruct::nScanlines
-		ELSE	
+		ELSE
 			NEG16
 			TAX
 			STX	hdmaTmTable + .sizeof(HdmaTmTableStruct) * 0 + HdmaTmTableStruct::nScanlines
@@ -248,13 +248,13 @@ ROUTINE VBlank
 
 			LDX	#BG_DISPLAY_HEIGHT
 			STX	hdmaTmTable + .sizeof(HdmaTmTableStruct) * 1 + HdmaTmTableStruct::nScanlines
-			
+
 			LDX	#TM_BG1 | TM_OBJ
 			STX	hdmaTmTable + .sizeof(HdmaTmTableStruct) * 1 + HdmaTmTableStruct::tm
 
 			LDX	#BG_DISPLAY_HEIGHT
 			STX	hdmaTmTable + .sizeof(HdmaTmTableStruct) * 2 + HdmaTmTableStruct::nScanlines
-			
+
 			LDX	#TM_BG2 | TM_OBJ
 			STX	hdmaTmTable + .sizeof(HdmaTmTableStruct) * 2 + HdmaTmTableStruct::tm
 
@@ -275,13 +275,13 @@ ROUTINE VBlank
 
 			LDX	#BG_DISPLAY_HEIGHT
 			STX	hdmaTmTable + .sizeof(HdmaTmTableStruct) * 1 + HdmaTmTableStruct::nScanlines
-			
+
 			LDX	#TM_BG2 | TM_OBJ
 			STX	hdmaTmTable + .sizeof(HdmaTmTableStruct) * 1 + HdmaTmTableStruct::tm
 
 			LDX	#BG_DISPLAY_HEIGHT
 			STX	hdmaTmTable + .sizeof(HdmaTmTableStruct) * 2 + HdmaTmTableStruct::nScanlines
-			
+
 			LDX	#TM_BG3 | TM_OBJ
 			STX	hdmaTmTable + .sizeof(HdmaTmTableStruct) * 2 + HdmaTmTableStruct::tm
 
@@ -298,7 +298,7 @@ ROUTINE VBlank
 
 			LDX	#BG_DISPLAY_HEIGHT
 			STX	hdmaTmTable + .sizeof(HdmaTmTableStruct) * 1 + HdmaTmTableStruct::nScanlines
-			
+
 			LDX	#TM_BG3 | TM_OBJ
 			STX	hdmaTmTable + .sizeof(HdmaTmTableStruct) * 1 + HdmaTmTableStruct::tm
 

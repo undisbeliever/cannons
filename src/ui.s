@@ -399,7 +399,7 @@ ROUTINE DrawCannons
 
 	PHD
 	STZ	MetaSprite__size
-	
+
 	REP	#$30
 .A16
 	LDA	#Cannons__cannons
@@ -601,7 +601,7 @@ tmp_yFractional = tmp3
 	JSR	CannonBall__SetVelocity
 
 	STZ	MetaSprite__size
-	
+
 	REP	#$30
 .A16
 	.assert CANNON_AIM_MULTIPLIER = 16, error, "Bad Code"
